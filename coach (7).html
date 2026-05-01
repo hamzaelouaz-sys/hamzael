@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coach Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0a0a;color:#f0f0f0;font-family:sans-serif;min-height:100vh}
+.center{min-height:100vh;display:flex;align-items:center;justify-content:center}
+.box{background:#151515;border:1px solid #262626;border-radius:12px;padding:32px;width:100%;max-width:380px}
+h1{font-size:20px;margin-bottom:4px;color:#c9a84c}
+.sub{font-size:11px;color:#666;letter-spacing:2px;text-transform:uppercase;margin-bottom:24px}
+label{display:block;font-size:10px;letter-spacing:2px;color:#666;text-transform:uppercase;margin-bottom:6px}
+input{width:100%;padding:11px 14px;background:#111;border:1px solid #262626;border-radius:6px;color:#f0f0f0;font-size:14px;outline:none;margin-bottom:14px}
+input:focus{border-color:#c9a84c}
+.btn{width:100%;padding:13px;background:#c9a84c;color:#0a0a0a;border:none;border-radius:6px;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer}
+.btn:hover{opacity:0.9}
+.err{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);color:#f87171;padding:10px;border-radius:6px;font-size:12px;margin-bottom:14px;display:none}
+
+/* APP */
+#app{display:none}
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.side{background:#111;border-right:1px solid #1e1e1e;display:flex;flex-direction:column}
+.side-head{padding:20px;border-bottom:1px solid #1e1e1e}
+.logo{font-size:16px;font-weight:700;color:#c9a84c}
+.side-nav{padding:12px;flex:1}
+.nav-btn{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;background:none;border:none;border-radius:6px;color:#666;font-size:13px;cursor:pointer;text-align:left;margin-bottom:2px}
+.nav-btn:hover{background:#151515;color:#f0f0f0}
+.nav-btn.active{background:rgba(201,168,76,0.1);color:#c9a84c;border:1px solid rgba(201,168,76,0.15)}
+.side-foot{padding:16px;border-top:1px solid #1e1e1e}
+.email{font-size:11px;color:#666;margin-bottom:8px}
+.logout{width:100%;padding:8px;background:none;border:1px solid #262626;border-radius:6px;color:#666;font-size:12px;cursor:pointer}
+.logout:hover{border-color:#f87171;color:#f87171}
+
+.main{overflow-y:auto}
+.topbar{padding:18px 24px;border-bottom:1px solid #1e1e1e;font-size:20px;font-weight:700;position:sticky;top:0;background:#0a0a0a;z-index:10}
+.content{padding:22px 24px}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+.stat{background:#151515;border:1px solid #262626;border-radius:10px;padding:18px}
+.stat-lbl{font-size:10px;letter-spacing:2px;color:#666;text-transform:uppercase;margin-bottom:8px}
+.stat-val{font-size:28px;font-weight:700;color:#f0f0f0}
+.stat-sub{font-size:11px;color:#666;margin-top:4px}
+
+.tbl-box{background:#151515;border:1px solid #262626;border-radius:10px;overflow:hidden;margin-bottom:16px}
+.tbl-head{padding:12px 16px;border-bottom:1px solid #1e1e1e;font-size:10px;letter-spacing:2px;color:#666;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 16px;text-align:left;font-size:10px;letter-spacing:1px;color:#666;text-transform:uppercase;border-bottom:1px solid #1e1e1e;background:#111}
+td{padding:12px 16px;font-size:13px;border-bottom:1px solid #1e1e1e}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,0.02)}
+
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:600}
+.bg{background:rgba(74,222,128,0.1);color:#4ade80}
+.bo{background:rgba(201,168,76,0.1);color:#c9a84c}
+
+/* CLIENT DETAIL */
+.back{background:none;border:none;color:#666;font-size:13px;cursor:pointer;margin-bottom:16px;padding:0}
+.back:hover{color:#c9a84c}
+.edit-box{background:#151515;border:1px solid #262626;border-radius:10px;padding:20px;margin-bottom:16px}
+.edit-title{font-size:10px;letter-spacing:2px;color:#666;text-transform:uppercase;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #1e1e1e}
+.edit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.eg label{font-size:10px;letter-spacing:1px;color:#666;text-transform:uppercase;display:block;margin-bottom:5px}
+.eg input,.eg select{width:100%;padding:8px 10px;background:#111;border:1px solid #262626;border-radius:6px;color:#f0f0f0;font-size:13px;outline:none}
+.eg input:focus,.eg select:focus{border-color:#c9a84c}
+.eg select option{background:#151515}
+.save-row{display:flex;align-items:center;gap:10px;margin-top:14px}
+.save-btn{padding:9px 20px;background:#c9a84c;color:#0a0a0a;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer}
+.saved{color:#4ade80;font-size:12px;display:none}
+
+.ci-card{background:#151515;border:1px solid #262626;border-radius:8px;padding:14px;margin-bottom:8px}
+.ci-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.ci-week{font-size:11px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase}
+.ci-rows{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.ci-row{font-size:12px}
+.ci-key{color:#666}
+
+.view{display:none}
+.view.active{display:block}
+
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(201,168,76,0.2);border-top-color:#c9a84c;border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:30px;color:#666;font-size:13px}
+
+/* PIN */
+#pin{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0a0a}
+.pin-box{background:#151515;border:1px solid #262626;border-radius:12px;padding:32px;width:100%;max-width:320px;text-align:center}
+.pin-logo{font-size:22px;font-weight:700;color:#c9a84c;margin-bottom:4px}
+.pin-sub{font-size:10px;color:#666;letter-spacing:3px;text-transform:uppercase;margin-bottom:28px}
+.pin-input{width:100%;padding:14px;background:#111;border:1px solid #262626;border-radius:6px;color:#f0f0f0;font-size:18px;text-align:center;letter-spacing:6px;outline:none;margin-bottom:10px}
+.pin-input:focus{border-color:#c9a84c}
+.pin-err{color:#f87171;font-size:12px;min-height:16px;margin-bottom:8px}
+.pin-btn{width:100%;padding:13px;background:#c9a84c;color:#0a0a0a;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer}
+
+@media(max-width:768px){
+  .layout{grid-template-columns:1fr}
+  .side{display:none}
+  .stats{grid-template-columns:1fr 1fr}
+  .edit-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- PIN -->
+<div id="pin">
+  <div class="pin-box">
+    <div class="pin-logo">@hamzaelouaz</div>
+    <div class="pin-sub">Coach adgang</div>
+    <input class="pin-input" id="pin-input" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')checkPin()">
+    <div class="pin-err" id="pin-err"></div>
+    <button class="pin-btn" onclick="checkPin()">Bekræft →</button>
+  </div>
+</div>
+
+<!-- AUTH -->
+<div id="auth" style="display:none">
+  <div class="center">
+    <div class="box">
+      <h1>Coach Dashboard</h1>
+      <div class="sub">@hamzaelouaz</div>
+      <div class="err" id="err"></div>
+      <label>E-mail</label>
+      <input id="email" type="email" placeholder="din@email.dk" autocomplete="email">
+      <label>Adgangskode</label>
+      <input id="pw" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
+      <button class="btn" id="login-btn" onclick="login()">Log ind</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="layout">
+    <nav class="side">
+      <div class="side-head">
+        <div class="logo">@hamzaelouaz</div>
+        <div style="font-size:10px;color:#666;margin-top:2px;letter-spacing:1px">COACH DASHBOARD</div>
+      </div>
+      <div class="side-nav">
+        <button class="nav-btn active" id="nb-overview" onclick="showView('overview')">📊 Overblik</button>
+        <button class="nav-btn" id="nb-clients" onclick="showView('clients')">👥 Klienter</button>
+        <button class="nav-btn" id="nb-checkins" onclick="showView('checkins')">📋 Check-ins</button>
+        <button class="nav-btn" id="nb-intakes" onclick="showView('intakes')">📬 Opstartsskemaer</button>
+      </div>
+      <div class="side-foot">
+        <div class="email" id="user-email"></div>
+        <button class="logout" onclick="logout()">Log ud</button>
+      </div>
+    </nav>
+
+    <div class="main">
+
+      <!-- OVERBLIK -->
+      <div id="v-overview" class="view active">
+        <div class="topbar">Overblik</div>
+        <div class="content">
+          <div class="stats">
+            <div class="stat"><div class="stat-lbl">Klienter</div><div class="stat-val" id="s-clients">-</div><div class="stat-sub">Registrerede</div></div>
+            <div class="stat"><div class="stat-lbl">Check-ins</div><div class="stat-val" id="s-ci">-</div><div class="stat-sub">Seneste 7 dage</div></div>
+            <div class="stat"><div class="stat-lbl">Opstartsskemaer</div><div class="stat-val" id="s-in">-</div><div class="stat-sub">Indsendte</div></div>
+            <div class="stat"><div class="stat-lbl">Gnsnt. indsats</div><div class="stat-val" id="s-score">-</div><div class="stat-sub">Check-in score</div></div>
+          </div>
+          <div class="tbl-box">
+            <div class="tbl-head">Seneste check-ins</div>
+            <table><thead><tr><th>Klient</th><th>Uge</th><th>Vægt</th><th>Indsats</th><th>Dato</th></tr></thead>
+            <tbody id="t-recent"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- KLIENTER -->
+      <div id="v-clients" class="view">
+        <div class="topbar">Klienter</div>
+        <div class="content">
+          <div id="client-list">
+            <div class="tbl-box">
+              <div class="tbl-head"><span>Alle klienter</span><span class="badge bo" id="client-count">0</span></div>
+              <table><thead><tr><th>Navn</th><th>E-mail</th><th>Vægt</th><th>Program</th><th>Uge</th><th></th></tr></thead>
+              <tbody id="t-clients"></tbody></table>
+            </div>
+          </div>
+          <div id="client-detail" style="display:none">
+            <button class="back" onclick="backToList()">← Tilbage</button>
+            <div style="margin-bottom:20px">
+              <div style="font-size:22px;font-weight:700" id="cd-name"></div>
+              <div style="font-size:12px;color:#666;margin-top:2px" id="cd-email"></div>
+            </div>
+            <div class="edit-box">
+              <div class="edit-title">Program & Makromål</div>
+              <div class="edit-grid">
+                <div class="eg"><label>Program</label>
+                  <select id="ed-prog"><option value="">Vælg...</option><option>3-dages Fullbody</option><option>4-dages Upper/Lower</option><option>5-dages PPL+UL</option><option>Andet</option></select>
+                </div>
+                <div class="eg"><label>Uge</label><input id="ed-week" type="number" min="1" placeholder="1"></div>
+                <div class="eg"><label>Kcal</label><input id="ed-kcal" type="number" placeholder="2800"></div>
+                <div class="eg"><label>Protein (g)</label><input id="ed-prot" type="number" placeholder="180"></div>
+                <div class="eg"><label>Kulhydrat (g)</label><input id="ed-kh" type="number" placeholder="320"></div>
+                <div class="eg"><label>Fedt (g)</label><input id="ed-fedt" type="number" placeholder="65"></div>
+                <div class="eg"><label>Startvægt (kg)</label><input id="ed-start" type="number" step="0.1" placeholder="75"></div>
+                <div class="eg"><label>Nuv. vægt (kg)</label><input id="ed-curw" type="number" step="0.1" placeholder="76"></div>
+                <div class="eg"><label>Målvægt (kg)</label><input id="ed-target" type="number" step="0.1" placeholder="80"></div>
+              </div>
+              <div class="save-row">
+                <button class="save-btn" onclick="saveClient()">Gem</button>
+                <span class="saved" id="saved-ok">✓ Gemt!</span>
+              </div>
+            </div>
+            <div class="tbl-box"><div class="tbl-head">Check-ins</div><div id="cd-checkins" style="padding:12px"></div></div>
+            <div id="cd-intake" style="display:none">
+              <div class="tbl-box" style="margin-top:16px"><div class="tbl-head">Opstartsskema</div><div id="cd-intake-content" style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHECK-INS -->
+      <div id="v-checkins" class="view">
+        <div class="topbar">Alle check-ins</div>
+        <div class="content">
+          <div class="tbl-box">
+            <div class="tbl-head">Check-ins</div>
+            <table><thead><tr><th>Klient</th><th>Uge</th><th>Vægt</th><th>Træning</th><th>Indsats</th><th>Dato</th></tr></thead>
+            <tbody id="t-ci"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- OPSTARTSSKEMAER -->
+      <div id="v-intakes" class="view">
+        <div class="topbar">Opstartsskemaer</div>
+        <div class="content"><div id="intake-list"></div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────
+const URL  = 'https://rtcayuwapitueckgprzc.supabase.co';
+const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0Y2F5dXdhcGl0dWVja2dwcnpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NzA2MzAsImV4cCI6MjA5MzA0NjYzMH0.uwMOD1w3uvQFGLCTpB8kkGPxM1z1pRvzF2VEANr3VME';
+const PIN  = 'hamza2024';
+
+const sb = supabase.createClient(URL, KEY);
+let selUser = null;
+
+// ── PIN ───────────────────────────────────────────────────────
+function checkPin() {
+  if (document.getElementById('pin-input').value === PIN) {
+    document.getElementById('pin').style.display = 'none';
+    document.getElementById('auth').style.display = 'block';
+  } else {
+    document.getElementById('pin-err').textContent = 'Forkert adgangskode';
+    document.getElementById('pin-input').value = '';
+  }
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────
+async function login() {
+  const email = document.getElementById('email').value.trim();
+  const pw    = document.getElementById('pw').value;
+  if (!email || !pw) { showErr('Udfyld begge felter.'); return; }
+  const btn = document.getElementById('login-btn');
+  btn.textContent = '...'; btn.disabled = true;
+  const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+  btn.textContent = 'Log ind'; btn.disabled = false;
+  if (error) showErr('Forkert e-mail eller adgangskode.');
+}
+
+function showErr(msg) {
+  const e = document.getElementById('err');
+  e.textContent = msg; e.style.display = 'block';
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('auth').style.display = 'block';
+}
+
+// ── LOAD DATA ─────────────────────────────────────────────────
+async function load() {
+  if (isLoading) return;
+  isLoading = true;
+  try {
+  // Fetch all tables in parallel
+  const [r1, r2, r3, r4] = await Promise.all([
+    sb.from('profiles').select('*'),
+    sb.from('client_data').select('*'),
+    sb.from('checkins').select('*').order('created_at', { ascending: false }),
+    sb.from('intake_forms').select('*').order('submitted_at', { ascending: false })
+  ]);
+
+  const profiles  = r1.data || [];
+  const clients   = r2.data || [];
+  const checkins  = r3.data || [];
+  const intakes   = r4.data || [];
+
+  // Build user map
+  const umap = {};
+  profiles.forEach(p => {
+    umap[p.id] = { id: p.id, email: p.email || '', name: p.full_name || p.email?.split('@')[0] || 'Ukendt' };
+  });
+  intakes.forEach(i => {
+    if (!umap[i.user_id]) umap[i.user_id] = { id: i.user_id, email: '', name: i.full_name || 'Ukendt' };
+    else if (!umap[i.user_id].name || umap[i.user_id].name === 'Ukendt') umap[i.user_id].name = i.full_name;
+  });
+  clients.forEach(c => {
+    if (!umap[c.user_id]) umap[c.user_id] = { id: c.user_id, email: '', name: 'Klient' };
+  });
+
+  const users = Object.values(umap);
+
+  // Stats
+  const week = new Date(Date.now() - 7*86400000).toISOString();
+  const recent = checkins.filter(c => c.created_at > week);
+  const scores = checkins.filter(c => c.score).map(c => c.score);
+  document.getElementById('s-clients').textContent = users.length;
+  document.getElementById('s-ci').textContent = recent.length;
+  document.getElementById('s-in').textContent = intakes.length;
+  document.getElementById('s-score').textContent = scores.length ? (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1) : '—';
+
+  // Recent checkins table
+  const tr = document.getElementById('t-recent');
+  tr.innerHTML = checkins.slice(0,10).map(c => {
+    const u = umap[c.user_id];
+    return `<tr>
+      <td>${u?.name || '—'}</td>
+      <td><span class="badge bo">Uge ${c.week}</span></td>
+      <td>${c.weight ? c.weight + ' kg' : '—'}</td>
+      <td>${c.score ? c.score+'/10' : '—'}</td>
+      <td style="color:#666;font-size:11px">${fmtDate(c.created_at)}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="5" class="empty">Ingen check-ins endnu</td></tr>';
+
+  // Clients table
+  document.getElementById('client-count').textContent = users.length + ' klienter';
+  const tc = document.getElementById('t-clients');
+  tc.innerHTML = users.map(u => {
+    const cd = clients.find(c => c.user_id === u.id);
+    const lastCi = checkins.find(c => c.user_id === u.id);
+    return `<tr>
+      <td style="font-weight:500">${u.name}</td>
+      <td style="color:#666;font-size:11px">${u.email}</td>
+      <td>${cd?.current_weight ? cd.current_weight + ' kg' : '—'}</td>
+      <td style="font-size:12px">${cd?.program || '—'}</td>
+      <td>${cd?.week ? `<span class="badge bo">Uge ${cd.week}</span>` : '—'}</td>
+      <td><button onclick="openClient('${u.id}')" style="padding:5px 12px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);border-radius:6px;color:#c9a84c;font-size:11px;cursor:pointer">Åbn →</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" class="empty">Ingen klienter endnu</td></tr>';
+
+  // All checkins
+  const tci = document.getElementById('t-ci');
+  tci.innerHTML = checkins.slice(0,50).map(c => {
+    const u = umap[c.user_id];
+    return `<tr>
+      <td style="font-weight:500">${u?.name || '—'}</td>
+      <td><span class="badge bo">Uge ${c.week}</span></td>
+      <td>${c.weight ? c.weight + ' kg' : '—'}</td>
+      <td style="color:#666;font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.training_done || '—'}</td>
+      <td>${c.score ? c.score+'/10' : '—'}</td>
+      <td style="color:#666;font-size:11px">${fmtDate(c.created_at)}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" class="empty">Ingen check-ins endnu</td></tr>';
+
+  // Intakes
+  const il = document.getElementById('intake-list');
+  il.innerHTML = intakes.map(i => {
+    const u = umap[i.user_id];
+    return `<div class="tbl-box" style="margin-bottom:12px">
+      <div class="tbl-head">
+        <span>${i.full_name || u?.name || '—'}</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:11px;color:#666">${fmtDate(i.submitted_at)}</span>
+          <button onclick="openClient('${i.user_id}')" style="padding:4px 10px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);border-radius:4px;color:#c9a84c;font-size:10px;cursor:pointer">Åbn →</button>
+        </div>
+      </div>
+      <div style="padding:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:12px">
+        ${irow('Mål', i.primary_goal)}${irow('Aktivitet', i.activity_level)}${irow('Erfaring', i.years_training ? i.years_training+' år' : null)}${irow('Vægt', i.weight ? i.weight+' kg' : null)}
+        ${irow('Allergier', i.allergies)}${irow('Højde', i.height ? i.height+' cm' : null)}${irow('Køn', i.gender)}${irow('Alder', i.age ? i.age+' år' : null)}
+      </div>
+      ${i.why ? `<div style="padding:0 14px 14px;font-size:12px;color:#666"><span style="color:#c9a84c">Why: </span>${i.why}</div>` : ''}
+    </div>`;
+  }).join('') || '<div class="empty">Ingen opstartsskemaer endnu</div>';
+
+  // Store for client detail
+  window._umap = umap;
+  window._clients = clients;
+  window._checkins = checkins;
+  window._intakes = intakes;
+  } catch(err) {
+    console.error('Load error:', err);
+    alert('Fejl ved indlæsning: ' + err.message);
+  } finally {
+    isLoading = false;
+  }
+}
+
+function irow(k, v) {
+  if (!v) return '';
+  return `<div><div style="color:#666;margin-bottom:2px">${k}</div><div>${v}</div></div>`;
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('da-DK', { day:'numeric', month:'short' });
+}
+
+// ── CLIENT DETAIL ─────────────────────────────────────────────
+async function openClient(userId) {
+  selUser = userId;
+  const u  = window._umap?.[userId] || {};
+  const cd = window._clients?.find(c => c.user_id === userId);
+  const ci = window._checkins?.filter(c => c.user_id === userId) || [];
+  const intake = window._intakes?.find(i => i.user_id === userId);
+
+  document.getElementById('cd-name').textContent  = u.name || '—';
+  document.getElementById('cd-email').textContent = u.email || '—';
+
+  document.getElementById('ed-prog').value  = cd?.program || '';
+  document.getElementById('ed-week').value  = cd?.week || 1;
+  document.getElementById('ed-kcal').value  = cd?.kcal_goal || '';
+  document.getElementById('ed-prot').value  = cd?.prot_goal || '';
+  document.getElementById('ed-kh').value    = cd?.kh_goal || '';
+  document.getElementById('ed-fedt').value  = cd?.fedt_goal || '';
+  document.getElementById('ed-start').value = cd?.start_weight || '';
+  document.getElementById('ed-curw').value  = cd?.current_weight || '';
+  document.getElementById('ed-target').value= cd?.target_weight || '';
+
+  document.getElementById('cd-checkins').innerHTML = ci.length ? ci.map(c => `
+    <div class="ci-card">
+      <div class="ci-top">
+        <span class="ci-week">Uge ${c.week}</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:11px;color:${c.score>=8?'#4ade80':c.score>=5?'#c9a84c':'#f87171'}">${c.score||'—'}/10</span>
+          <span style="font-size:10px;color:#666">${fmtDate(c.created_at)}</span>
+        </div>
+      </div>
+      <div class="ci-rows">
+        <div class="ci-row"><span class="ci-key">Vægt: </span>${c.weight||'—'} kg</div>
+        <div class="ci-row"><span class="ci-key">Træning: </span>${c.training_done||'—'}</div>
+        <div class="ci-row"><span class="ci-key">Kostplan: </span>${c.meal_plan||'—'}</div>
+        <div class="ci-row"><span class="ci-key">Velvære: </span>${c.wellbeing||'—'}</div>
+      </div>
+      ${c.progression ? `<div style="margin-top:6px;font-size:12px;color:#666"><span style="color:#c9a84c">Progression: </span>${c.progression}</div>` : ''}
+    </div>
+  `).join('') : '<div class="empty">Ingen check-ins endnu</div>';
+
+  if (intake) {
+    document.getElementById('cd-intake').style.display = 'block';
+    document.getElementById('cd-intake-content').innerHTML = [
+      irow('Primært mål', intake.primary_goal), irow('Aktivitetsniveau', intake.activity_level),
+      irow('Erfaring', intake.years_training ? intake.years_training+' år' : null), irow('Session', intake.session_duration),
+      irow('Allergier', intake.allergies), irow('Skader', intake.injuries),
+      irow('Bedste løft', intake.best_lifts), irow('Why', intake.why),
+    ].join('');
+  }
+
+  document.getElementById('client-list').style.display = 'none';
+  document.getElementById('client-detail').style.display = 'block';
+  showView('clients');
+}
+
+function backToList() {
+  document.getElementById('client-list').style.display = 'block';
+  document.getElementById('client-detail').style.display = 'none';
+  selUser = null;
+}
+
+// ── SAVE CLIENT ───────────────────────────────────────────────
+async function saveClient() {
+  if (!selUser) return;
+  const btn = document.querySelector('.save-btn');
+  btn.textContent = '...'; btn.disabled = true;
+
+  const { error } = await sb.from('client_data').upsert({
+    user_id: selUser,
+    program:        document.getElementById('ed-prog').value,
+    week:     parseInt(document.getElementById('ed-week').value) || 1,
+    kcal_goal:parseInt(document.getElementById('ed-kcal').value) || null,
+    prot_goal:parseInt(document.getElementById('ed-prot').value) || null,
+    kh_goal:  parseInt(document.getElementById('ed-kh').value)   || null,
+    fedt_goal:parseInt(document.getElementById('ed-fedt').value) || null,
+    start_weight:   parseFloat(document.getElementById('ed-start').value)  || null,
+    current_weight: parseFloat(document.getElementById('ed-curw').value)   || null,
+    target_weight:  parseFloat(document.getElementById('ed-target').value) || null,
+  }, { onConflict: 'user_id' });
+
+  btn.textContent = 'Gem'; btn.disabled = false;
+  if (!error) {
+    const ok = document.getElementById('saved-ok');
+    ok.style.display = 'inline';
+    setTimeout(() => ok.style.display = 'none', 2000);
+    await load();
+  } else {
+    alert('Fejl: ' + error.message);
+  }
+}
+
+// ── VIEW NAV ──────────────────────────────────────────────────
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('v-' + id).classList.add('active');
+  document.getElementById('nb-' + id)?.classList.add('active');
+}
+
+// ── AUTH STATE ────────────────────────────────────────────────
+let isLoading = false;
+
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (session?.user) {
+    document.getElementById('auth').style.display = 'none';
+    document.getElementById('app').style.display  = 'block';
+    document.getElementById('user-email').textContent = session.user.email;
+    if (!isLoading) await load();
+  } else {
+    document.getElementById('app').style.display  = 'none';
+  }
+});
+</script>
+</body>
+</html>
