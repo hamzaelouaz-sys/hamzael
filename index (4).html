@@ -1,0 +1,1789 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Hamzaelouaz · Coaching Portal</title>
+
+<!-- ============================================================
+  SUPABASE OPSÆTNING:
+  Erstat de to konstanter øverst i <script> sektionen:
+    SUPABASE_URL = 'https://DIN-PROJECT-ID.supabase.co'
+    SUPABASE_KEY = 'din-anon-public-key'
+  
+  Find dem på: supabase.com → dit projekt → Settings → API
+
+  SQL SCHEMA (kør i Supabase SQL Editor):
+  Se kommentar i bunden af filen.
+============================================================ -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+
+<style>
+/* ── RESET & BASE ─────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0a0a0a;
+  --surface:#111111;
+  --card:#151515;
+  --border:#1e1e1e;
+  --border2:#262626;
+  --text:#f0f0f0;
+  --muted:#666;
+  --subtle:#333;
+  --gold:#c9a84c;
+  --gold2:#e8c87a;
+  --gold-dim:rgba(201,168,76,0.12);
+  --gold-glow:rgba(201,168,76,0.25);
+  --green:#4ade80;
+  --red:#f87171;
+  --blue:#60a5fa;
+  --radius:14px;
+  --radius-sm:8px;
+  --sidebar:240px;
+  --font-head:'Clash Display',sans-serif;
+  --font-body:'Cabinet Grotesk',sans-serif;
+  --transition:0.2s cubic-bezier(0.4,0,0.2,1);
+}
+html{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;-webkit-font-smoothing:antialiased}
+body{min-height:100vh;overflow-x:hidden}
+button{cursor:pointer;font-family:var(--font-body)}
+input,select,textarea{font-family:var(--font-body)}
+a{text-decoration:none;color:inherit}
+
+/* ── SCROLLBAR ───────────────────────────────────────────── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* ── AUTH ────────────────────────────────────────────────── */
+#auth{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:20px;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 0%, rgba(201,168,76,0.08) 0%, transparent 70%),
+    var(--bg);
+}
+.auth-wrap{width:100%;max-width:400px}
+.auth-logo{
+  text-align:center;margin-bottom:40px;
+}
+.auth-logo-title{
+  font-family:var(--font-head);font-size:32px;font-weight:700;
+  background:linear-gradient(135deg,var(--gold2),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  letter-spacing:-0.5px;
+}
+.auth-logo-sub{font-size:12px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-top:4px}
+.auth-box{
+  background:var(--card);
+  border:1px solid var(--border2);
+  border-radius:20px;
+  padding:32px;
+  backdrop-filter:blur(20px);
+}
+.auth-tabs{display:flex;gap:0;margin-bottom:28px;background:var(--surface);border-radius:var(--radius-sm);padding:4px}
+.auth-tab{
+  flex:1;padding:9px;text-align:center;font-size:12px;font-weight:500;
+  letter-spacing:0.5px;border:none;background:transparent;color:var(--muted);
+  border-radius:6px;transition:all var(--transition);
+}
+.auth-tab.on{background:var(--border2);color:var(--text)}
+.auth-field{margin-bottom:16px}
+.auth-label{display:block;font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;font-weight:500;margin-bottom:8px}
+.auth-input{
+  width:100%;padding:12px 16px;
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:var(--radius-sm);color:var(--text);font-size:14px;
+  outline:none;transition:border-color var(--transition);
+}
+.auth-input:focus{border-color:var(--gold)}
+.auth-input::placeholder{color:var(--subtle)}
+.auth-btn{
+  width:100%;padding:14px;margin-top:8px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:#0a0a0a;border:none;border-radius:var(--radius-sm);
+  font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  transition:all var(--transition);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.auth-btn:hover{opacity:0.9;transform:translateY(-1px)}
+.auth-btn:active{transform:translateY(0)}
+.auth-err{
+  background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);
+  color:#f87171;padding:10px 14px;border-radius:var(--radius-sm);
+  font-size:12px;margin-bottom:16px;display:none;
+}
+.auth-ok{
+  background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);
+  color:#4ade80;padding:10px 14px;border-radius:var(--radius-sm);
+  font-size:12px;margin-bottom:16px;display:none;
+}
+
+/* ── APP LAYOUT ──────────────────────────────────────────── */
+#app{display:none;min-height:100vh}
+.layout{display:flex;min-height:100vh}
+
+/* ── SIDEBAR ─────────────────────────────────────────────── */
+.sidebar{
+  width:var(--sidebar);flex-shrink:0;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;bottom:0;z-index:50;
+  transition:transform var(--transition);
+}
+.sb-head{padding:24px 20px;border-bottom:1px solid var(--border)}
+.sb-logo{
+  font-family:var(--font-head);font-size:18px;font-weight:700;
+  background:linear-gradient(135deg,var(--gold2),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.sb-user{font-size:11px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-nav{flex:1;padding:16px 12px;overflow-y:auto}
+.sb-link{
+  display:flex;align-items:center;gap:12px;padding:10px 12px;
+  border-radius:var(--radius-sm);color:var(--muted);font-size:13px;font-weight:500;
+  transition:all var(--transition);cursor:pointer;border:none;background:none;
+  width:100%;text-align:left;margin-bottom:2px;
+}
+.sb-link:hover{background:var(--card);color:var(--text)}
+.sb-link.on{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(201,168,76,0.15)}
+.sb-icon{font-size:17px;width:22px;text-align:center;flex-shrink:0}
+.sb-bottom{padding:16px;border-top:1px solid var(--border)}
+.sb-out{
+  display:flex;align-items:center;gap:8px;width:100%;padding:10px 12px;
+  background:none;border:1px solid var(--border2);border-radius:var(--radius-sm);
+  color:var(--muted);font-size:12px;cursor:pointer;transition:all var(--transition);
+}
+.sb-out:hover{border-color:var(--red);color:var(--red)}
+
+/* ── MAIN ────────────────────────────────────────────────── */
+.main{
+  flex:1;margin-left:var(--sidebar);
+  min-height:100vh;background:var(--bg);
+}
+
+/* ── BOTTOM NAV (mobile) ─────────────────────────────────── */
+.bottomnav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;z-index:50;
+  background:rgba(17,17,17,0.85);
+  backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  padding:8px 0 max(8px,env(safe-area-inset-bottom));
+}
+.bn-items{display:flex;justify-content:space-around}
+.bn-item{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:6px 16px;border:none;background:none;color:var(--muted);
+  font-size:10px;letter-spacing:0.5px;cursor:pointer;transition:color var(--transition);
+  min-width:60px;
+}
+.bn-item.on{color:var(--gold)}
+.bn-icon{font-size:20px}
+
+/* ── PAGE ────────────────────────────────────────────────── */
+.page{display:none;padding:28px;max-width:1100px;margin:0 auto}
+.page.on{display:block}
+.page-title{
+  font-family:var(--font-head);font-size:28px;font-weight:700;
+  letter-spacing:-0.5px;margin-bottom:4px;
+}
+.page-sub{font-size:13px;color:var(--muted);margin-bottom:28px}
+
+/* ── CARDS ───────────────────────────────────────────────── */
+.card{
+  background:var(--card);border:1px solid var(--border2);
+  border-radius:var(--radius);padding:20px;
+}
+.card-title{
+  font-size:10px;letter-spacing:2px;color:var(--muted);
+  text-transform:uppercase;font-weight:600;margin-bottom:14px;
+}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+
+/* ── STAT CARD ───────────────────────────────────────────── */
+.stat{
+  background:var(--card);border:1px solid var(--border2);
+  border-radius:var(--radius);padding:20px;
+  transition:border-color var(--transition);
+}
+.stat:hover{border-color:var(--gold)}
+.stat-lbl{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;font-weight:500;margin-bottom:10px}
+.stat-val{
+  font-family:var(--font-head);font-size:32px;font-weight:700;
+  line-height:1;color:var(--text);
+}
+.stat-unit{font-size:14px;color:var(--muted);margin-left:4px}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:6px}
+.stat-trend{font-size:12px;margin-top:4px}
+.up{color:var(--green)}.down{color:var(--red)}
+
+/* ── CIRCLE CHART ────────────────────────────────────────── */
+.macro-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.macro-circle{
+  background:var(--card);border:1px solid var(--border2);
+  border-radius:var(--radius);padding:20px 16px;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  transition:all var(--transition);
+}
+.macro-circle:hover{border-color:var(--gold);transform:translateY(-2px)}
+.circle-wrap{position:relative;width:90px;height:90px}
+.circle-wrap canvas{width:90px!important;height:90px!important}
+.circle-center{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+}
+.circle-val{font-family:var(--font-head);font-size:18px;font-weight:700;line-height:1}
+.circle-unit{font-size:9px;color:var(--muted)}
+.macro-name{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:500}
+.macro-nums{font-size:10px;color:var(--subtle)}
+
+/* ── STREAK ──────────────────────────────────────────────── */
+.streak-row{display:flex;gap:6px;align-items:center}
+.streak-day{
+  flex:1;height:40px;border-radius:6px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);
+  border:1px solid var(--border2);
+  transition:all var(--transition);
+}
+.streak-day.done{background:var(--gold-dim);border-color:rgba(201,168,76,0.3);color:var(--gold)}
+.streak-day.today{border-color:var(--gold);box-shadow:0 0 12px var(--gold-glow)}
+.streak-dot{width:6px;height:6px;border-radius:50%;background:var(--border2)}
+.streak-day.done .streak-dot{background:var(--gold)}
+
+/* ── MEAL CARDS ──────────────────────────────────────────── */
+.meal{
+  background:var(--card);border:1px solid var(--border2);
+  border-radius:var(--radius);margin-bottom:12px;overflow:hidden;
+  transition:border-color var(--transition);
+}
+.meal:hover{border-color:var(--border)}
+.meal-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;cursor:pointer;
+}
+.meal-left{display:flex;align-items:center;gap:14px}
+.meal-icon{
+  width:40px;height:40px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+}
+.meal-name{font-size:14px;font-weight:600}
+.meal-kcal{font-size:11px;color:var(--muted);margin-top:2px}
+.meal-right{display:flex;align-items:center;gap:12px}
+.meal-macros{text-align:right;display:none}
+.meal-chevron{font-size:12px;color:var(--muted);transition:transform var(--transition)}
+.meal-body{display:none;padding:0 20px 16px;border-top:1px solid var(--border)}
+.meal-body.open{display:block}
+.meal-chevron.open{transform:rotate(180deg)}
+.food-item{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 0;border-bottom:1px solid var(--border);
+}
+.food-item:last-child{border-bottom:none}
+.food-name{font-size:13px}
+.food-info{display:flex;gap:16px;align-items:center}
+.food-gram{font-size:12px;color:var(--muted)}
+.food-kcal{font-size:12px;color:var(--gold)}
+
+/* ── WORKOUT ─────────────────────────────────────────────── */
+.exercise{
+  background:var(--card);border:1px solid var(--border2);
+  border-radius:var(--radius);margin-bottom:12px;overflow:hidden;
+}
+.ex-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;cursor:pointer;
+}
+.ex-name{font-size:15px;font-weight:600}
+.ex-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.ex-badge{
+  padding:4px 10px;border-radius:100px;font-size:10px;font-weight:600;
+  letter-spacing:0.5px;background:var(--gold-dim);color:var(--gold);
+}
+.ex-body{display:none;padding:0 20px 16px}
+.ex-body.open{display:block}
+.set-row{
+  display:grid;grid-template-columns:40px 1fr 1fr 50px;gap:10px;align-items:center;
+  padding:10px 0;border-bottom:1px solid var(--border);
+}
+.set-row:last-child{border-bottom:none}
+.set-num{
+  width:32px;height:32px;border-radius:8px;background:var(--surface);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:var(--muted);
+  border:1px solid var(--border2);
+}
+.set-num.done{background:var(--gold-dim);color:var(--gold);border-color:rgba(201,168,76,0.3)}
+.set-input{
+  width:100%;padding:8px 10px;background:var(--surface);
+  border:1px solid var(--border2);border-radius:6px;
+  color:var(--text);font-size:13px;text-align:center;outline:none;
+  transition:border-color var(--transition);
+}
+.set-input:focus{border-color:var(--gold)}
+.set-lbl{font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px}
+.set-done-btn{
+  width:36px;height:36px;border-radius:8px;border:1px solid var(--border2);
+  background:none;color:var(--muted);font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all var(--transition);cursor:pointer;
+}
+.set-done-btn.done{background:var(--gold-dim);border-color:rgba(201,168,76,0.3);color:var(--gold)}
+.rest-timer{
+  background:var(--gold-dim);border:1px solid rgba(201,168,76,0.2);
+  border-radius:var(--radius-sm);padding:12px 16px;
+  display:none;align-items:center;gap:12px;margin-top:12px;
+}
+.rest-timer.show{display:flex}
+.rest-time{font-family:var(--font-head);font-size:24px;font-weight:700;color:var(--gold)}
+.rest-lbl{font-size:11px;color:var(--muted)}
+
+/* ── PROGRESS ────────────────────────────────────────────── */
+.chart-wrap{position:relative;height:200px}
+.weight-chart-wrap{position:relative;height:220px}
+.info-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 0;border-bottom:1px solid var(--border);
+}
+.info-row:last-child{border-bottom:none}
+.ir-key{font-size:12px;color:var(--muted)}
+.ir-val{font-size:13px;font-weight:500}
+
+/* ── CHECK-IN FORM ───────────────────────────────────────── */
+.fld{margin-bottom:18px}
+.fld-lbl{
+  display:block;font-size:10px;letter-spacing:2px;color:var(--muted);
+  text-transform:uppercase;font-weight:600;margin-bottom:8px;
+}
+.fld-input{
+  width:100%;padding:12px 16px;background:var(--surface);
+  border:1px solid var(--border2);border-radius:var(--radius-sm);
+  color:var(--text);font-size:14px;outline:none;transition:border-color var(--transition);
+}
+.fld-input:focus{border-color:var(--gold)}
+.fld-input::placeholder{color:var(--subtle)}
+.fld-select{
+  width:100%;padding:12px 16px;background:var(--surface);
+  border:1px solid var(--border2);border-radius:var(--radius-sm);
+  color:var(--text);font-size:14px;outline:none;appearance:none;cursor:pointer;
+}
+.fld-select option{background:var(--card)}
+.fld-ta{
+  width:100%;padding:12px 16px;background:var(--surface);
+  border:1px solid var(--border2);border-radius:var(--radius-sm);
+  color:var(--text);font-size:14px;outline:none;
+  resize:vertical;min-height:80px;line-height:1.6;
+  transition:border-color var(--transition);
+}
+.fld-ta:focus{border-color:var(--gold)}
+.fld-ta::placeholder{color:var(--subtle)}
+.fld-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.scale-row{display:flex;gap:6px}
+.scale-btn{
+  flex:1;padding:11px 4px;text-align:center;background:var(--surface);
+  border:1px solid var(--border2);border-radius:6px;cursor:pointer;
+  color:var(--muted);font-family:var(--font-head);font-size:15px;font-weight:600;
+  transition:all var(--transition);
+}
+.scale-btn.on{background:var(--gold-dim);border-color:rgba(201,168,76,0.4);color:var(--gold)}
+.s-div{display:flex;align-items:center;gap:12px;margin:20px 0 16px}
+.s-div-line{flex:1;height:1px;background:var(--border)}
+.s-div-txt{font-size:12px;color:var(--muted);white-space:nowrap;font-weight:500}
+.submit-btn{
+  width:100%;padding:15px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:#0a0a0a;border:none;border-radius:var(--radius-sm);
+  font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  cursor:pointer;transition:all var(--transition);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.submit-btn:hover{opacity:0.9;transform:translateY(-1px)}
+.submit-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.success-box{
+  background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.2);
+  border-radius:var(--radius);padding:40px 24px;text-align:center;
+  display:none;animation:fadeUp 0.4s ease;
+}
+.success-box.show{display:block}
+.suc-icon{font-size:44px;margin-bottom:14px}
+.suc-title{
+  font-family:var(--font-head);font-size:24px;font-weight:700;
+  color:var(--green);margin-bottom:8px;
+}
+.suc-txt{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* ── INTAKE STEPS ────────────────────────────────────────── */
+.step-prog{display:flex;gap:6px;margin-bottom:28px}
+.step-seg{flex:1;height:3px;border-radius:100px;background:var(--border2);transition:background 0.3s}
+.step-seg.done{background:var(--gold)}
+.step-form{display:none}
+.step-form.on{display:block;animation:fadeUp 0.3s ease}
+.cb-grp{display:flex;flex-wrap:wrap;gap:8px}
+.cb-item{
+  display:flex;align-items:center;gap:8px;padding:8px 14px;
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:100px;cursor:pointer;font-size:12px;color:var(--muted);
+  transition:all var(--transition);user-select:none;
+}
+.cb-item.on{background:var(--gold-dim);border-color:rgba(201,168,76,0.4);color:var(--gold)}
+.cb-dot{width:8px;height:8px;border-radius:50%;border:1px solid var(--border2);flex-shrink:0}
+.cb-item.on .cb-dot{background:var(--gold);border-color:var(--gold)}
+.btn-row{display:flex;gap:10px;margin-top:20px}
+.btn-back{
+  padding:13px 24px;background:none;border:1px solid var(--border2);
+  border-radius:var(--radius-sm);color:var(--muted);font-size:12px;
+  font-weight:500;letter-spacing:0.5px;cursor:pointer;transition:all var(--transition);
+}
+.btn-back:hover{border-color:var(--text);color:var(--text)}
+
+/* ── UTILITIES ───────────────────────────────────────────── */
+.spinner{
+  display:inline-block;width:16px;height:16px;
+  border:2px solid rgba(201,168,76,0.2);border-top-color:var(--gold);
+  border-radius:50%;animation:spin 0.7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.badge{
+  display:inline-flex;align-items:center;padding:3px 10px;
+  border-radius:100px;font-size:10px;font-weight:600;letter-spacing:0.5px;
+}
+.badge-g{background:rgba(74,222,128,0.1);color:var(--green)}
+.badge-o{background:rgba(201,168,76,0.1);color:var(--gold)}
+.badge-r{background:rgba(248,113,113,0.1);color:var(--red)}
+.hint{font-size:11px;color:var(--muted);margin-top:4px}
+.empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px}
+.empty-icon{font-size:32px;margin-bottom:10px}
+.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
+.no-program{
+  text-align:center;padding:60px 20px;
+  background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);
+}
+.no-program-icon{font-size:40px;margin-bottom:16px}
+.no-program-title{font-family:var(--font-head);font-size:20px;font-weight:700;margin-bottom:8px}
+.no-program-txt{font-size:13px;color:var(--muted);line-height:1.6;max-width:300px;margin:0 auto}
+
+@media(max-width:768px){
+  .sidebar{display:none}
+  .main{margin-left:0;padding-bottom:80px}
+  .bottomnav{display:block}
+  .page{padding:20px 16px}
+  .page-title{font-size:22px}
+  .grid-2,.grid-3,.grid-4,.fld-row{grid-template-columns:1fr}
+  .macro-grid{grid-template-columns:repeat(3,1fr)}
+  .scale-row{gap:3px}
+  .scale-btn{padding:10px 2px;font-size:13px}
+  .streak-row{gap:4px}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ AUTH ══════════════════════════════════════════════ -->
+<div id="auth">
+  <div class="auth-wrap">
+    <div class="auth-logo">
+      <div class="auth-logo-title">@hamzaelouaz</div>
+      <div class="auth-logo-sub">Coaching Portal</div>
+    </div>
+    <div class="auth-box">
+      <div class="auth-tabs">
+        <button class="auth-tab on" onclick="authTab('login')">Log ind</button>
+        <button class="auth-tab" onclick="authTab('signup')">Opret konto</button>
+      </div>
+      <div id="auth-err" class="auth-err"></div>
+      <div id="auth-ok" class="auth-ok"></div>
+
+      <div id="login-form">
+        <div class="auth-field">
+          <label class="auth-label">E-mail</label>
+          <input class="auth-input" id="l-email" type="email" placeholder="din@email.dk" autocomplete="email">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">Adgangskode</label>
+          <input class="auth-input" id="l-pw" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
+        </div>
+        <button class="auth-btn" id="login-btn" onclick="login()">Log ind</button>
+      </div>
+
+      <div id="signup-form" style="display:none">
+        <div class="auth-field">
+          <label class="auth-label">Fuldt navn</label>
+          <input class="auth-input" id="s-name" type="text" placeholder="Dit navn" autocomplete="name">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">E-mail</label>
+          <input class="auth-input" id="s-email" type="email" placeholder="din@email.dk" autocomplete="email">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">Adgangskode</label>
+          <input class="auth-input" id="s-pw" type="password" placeholder="Mindst 6 tegn" onkeydown="if(event.key==='Enter')signup()">
+        </div>
+        <button class="auth-btn" id="signup-btn" onclick="signup()">Opret konto</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ════════════════════════════════════════════════ -->
+<div id="app">
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <div class="sb-head">
+        <div class="sb-logo">@hamzaelouaz</div>
+        <div class="sb-user" id="sb-user">—</div>
+      </div>
+      <div class="sb-nav">
+        <button class="sb-link on" id="sb-dashboard" onclick="nav('dashboard')">
+          <span class="sb-icon">⚡</span>Dashboard
+        </button>
+        <button class="sb-link" id="sb-kost" onclick="nav('kost')">
+          <span class="sb-icon">🥗</span>Kostplan
+        </button>
+        <button class="sb-link" id="sb-traning" onclick="nav('traning')">
+          <span class="sb-icon">💪</span>Træning
+        </button>
+        <button class="sb-link" id="sb-progress" onclick="nav('progress')">
+          <span class="sb-icon">📈</span>Fremgang
+        </button>
+        <button class="sb-link" id="sb-checkin" onclick="nav('checkin')">
+          <span class="sb-icon">📋</span>Check-in
+        </button>
+        <button class="sb-link" id="sb-intake" onclick="nav('intake')">
+          <span class="sb-icon">📬</span>Opstartsskema
+        </button>
+      </div>
+      <div class="sb-bottom">
+        <button class="sb-out" onclick="logout()">
+          <span>⎋</span> Log ud
+        </button>
+      </div>
+    </nav>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <!-- ── DASHBOARD ── -->
+      <div id="page-dashboard" class="page on">
+        <div class="page-title" id="dash-title">God dag 👋</div>
+        <div class="page-sub" id="dash-sub">Indlæser din plan...</div>
+
+        <!-- Makro cirkler -->
+        <div class="macro-grid" id="macro-section">
+          <div class="macro-circle">
+            <div class="circle-wrap">
+              <canvas id="c-kcal"></canvas>
+              <div class="circle-center">
+                <div class="circle-val" id="cv-kcal">—</div>
+                <div class="circle-unit">kcal</div>
+              </div>
+            </div>
+            <div class="macro-name">Kalorier</div>
+            <div class="macro-nums" id="cn-kcal">mål: —</div>
+          </div>
+          <div class="macro-circle">
+            <div class="circle-wrap">
+              <canvas id="c-prot"></canvas>
+              <div class="circle-center">
+                <div class="circle-val" id="cv-prot">—</div>
+                <div class="circle-unit">g</div>
+              </div>
+            </div>
+            <div class="macro-name">Protein</div>
+            <div class="macro-nums" id="cn-prot">mål: —</div>
+          </div>
+          <div class="macro-circle">
+            <div class="circle-wrap">
+              <canvas id="c-kh"></canvas>
+              <div class="circle-center">
+                <div class="circle-val" id="cv-kh">—</div>
+                <div class="circle-unit">g</div>
+              </div>
+            </div>
+            <div class="macro-name">Kulhydrat</div>
+            <div class="macro-nums" id="cn-kh">mål: —</div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid-4" style="margin-bottom:20px" id="dash-stats">
+          <div class="stat">
+            <div class="stat-lbl">Nuværende vægt</div>
+            <div class="stat-val" id="d-weight">—<span class="stat-unit">kg</span></div>
+            <div class="stat-sub" id="d-weight-sub">Ingen data endnu</div>
+          </div>
+          <div class="stat">
+            <div class="stat-lbl">Målvægt</div>
+            <div class="stat-val" id="d-target">—<span class="stat-unit">kg</span></div>
+            <div class="stat-sub" id="d-target-sub">—</div>
+          </div>
+          <div class="stat">
+            <div class="stat-lbl">Program</div>
+            <div class="stat-val" style="font-size:18px" id="d-program">—</div>
+            <div class="stat-sub" id="d-week">—</div>
+          </div>
+          <div class="stat" style="cursor:pointer" onclick="nav('checkin')">
+            <div class="stat-lbl">Check-in</div>
+            <div class="stat-val" style="font-size:18px;color:var(--gold)">→</div>
+            <div class="stat-sub" id="d-ci">Send ugens rapport</div>
+          </div>
+        </div>
+
+        <!-- Ugens streak -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-title">Ugens trænings-streak</div>
+          <div class="streak-row" id="streak-row">
+            <!-- filled by JS -->
+          </div>
+        </div>
+
+        <!-- Seneste check-in -->
+        <div class="card" id="last-ci-card" style="display:none">
+          <div class="card-title">Seneste check-in</div>
+          <div id="last-ci-content"></div>
+        </div>
+      </div>
+
+      <!-- ── KOSTPLAN ── -->
+      <div id="page-kost" class="page">
+        <div class="page-title">Kostplan</div>
+        <div class="page-sub" id="kost-sub">Din daglige madplan</div>
+        <div id="kost-content">
+          <div class="no-program">
+            <div class="no-program-icon">🥗</div>
+            <div class="no-program-title">Kostplan ikke klar</div>
+            <div class="no-program-txt">Din coach er ved at bygge din personlige kostplan. Udfyld opstartsskemaet hvis du ikke allerede har gjort det.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TRÆNING ── -->
+      <div id="page-traning" class="page">
+        <div class="page-title">Træning</div>
+        <div class="page-sub" id="traning-sub">Dit træningsprogram</div>
+        <div id="traning-content">
+          <div class="no-program">
+            <div class="no-program-icon">💪</div>
+            <div class="no-program-title">Træningsprogram ikke klar</div>
+            <div class="no-program-txt">Din coach bygger dit program. Udfyld opstartsskemaet hvis du ikke allerede har gjort det.</div>
+          </div>
+        </div>
+        <div class="rest-timer" id="rest-timer">
+          <div>
+            <div class="rest-lbl">HVILE TIMER</div>
+            <div class="rest-time" id="rest-time">2:00</div>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:11px;color:var(--muted)">Næste sæt starter snart</div>
+          </div>
+          <button onclick="stopRest()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer">✕</button>
+        </div>
+      </div>
+
+      <!-- ── FREMGANG ── -->
+      <div id="page-progress" class="page">
+        <div class="page-title">Fremgang</div>
+        <div class="page-sub">Vægtudvikling og data</div>
+
+        <div class="grid-2" style="margin-bottom:20px" id="prog-stats">
+          <div class="stat">
+            <div class="stat-lbl">Nuværende vægt</div>
+            <div class="stat-val" id="p-weight">—<span class="stat-unit">kg</span></div>
+            <div class="stat-trend" id="p-change">Ingen data endnu</div>
+          </div>
+          <div class="stat">
+            <div class="stat-lbl">Til mål</div>
+            <div class="stat-val" id="p-tomaal">—<span class="stat-unit">kg</span></div>
+            <div class="stat-sub" id="p-start">Startvægt: —</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-title">Vægtudvikling</div>
+          <div class="weight-chart-wrap">
+            <canvas id="weight-chart"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Seneste check-in data</div>
+          <div id="prog-ci">
+            <div class="empty">Ingen check-in data endnu</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CHECK-IN ── -->
+      <div id="page-checkin" class="page">
+        <div class="page-title">Ugentligt check-in</div>
+        <div class="page-sub" id="ci-week-lbl">Send inden søndag</div>
+
+        <div id="ci-form">
+          <div class="card" style="margin-bottom:16px">
+            <div class="fld">
+              <label class="fld-lbl">Morgenvægt (kg)</label>
+              <input class="fld-input" id="ci-w" type="number" step="0.1" placeholder="fx 75.4">
+              <div class="hint">Tom mave, inden mad og kaffe</div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:16px">
+            <div class="s-div" style="margin-top:0">
+              <div class="s-div-line"></div>
+              <div class="s-div-txt">Træning</div>
+              <div class="s-div-line"></div>
+            </div>
+            <div class="fld">
+              <label class="fld-lbl">Gennemført alle træningspas?</label>
+              <select class="fld-select" id="ci-tr">
+                <option value="">Vælg...</option>
+                <option>Ja, alle passer gennemført</option>
+                <option>Ja, med ændringer</option>
+                <option>Delvist — et par misset</option>
+                <option>Nej — se forklaring nedenfor</option>
+              </select>
+            </div>
+            <div class="fld">
+              <label class="fld-lbl">Progression?</label>
+              <textarea class="fld-ta" id="ci-pr" placeholder="fx Squat op fra 80kg til 82.5kg..."></textarea>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:16px">
+            <div class="s-div" style="margin-top:0">
+              <div class="s-div-line"></div>
+              <div class="s-div-txt">Kost</div>
+              <div class="s-div-line"></div>
+            </div>
+            <div class="fld">
+              <label class="fld-lbl">Fulgt kostplanen?</label>
+              <select class="fld-select" id="ci-mp">
+                <option value="">Vælg...</option>
+                <option>Ja, fulgt præcist</option>
+                <option>Stort set — mindre afvigelser</option>
+                <option>Delvist — et par dage misset</option>
+                <option>Nej — se forklaring nedenfor</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:16px">
+            <div class="s-div" style="margin-top:0">
+              <div class="s-div-line"></div>
+              <div class="s-div-txt">Velvære</div>
+              <div class="s-div-line"></div>
+            </div>
+            <div class="fld">
+              <label class="fld-lbl">Energi, humør og motivation</label>
+              <textarea class="fld-ta" id="ci-wb" placeholder="Hvordan har du haft det i løbet af ugen?"></textarea>
+            </div>
+            <div class="fld">
+              <label class="fld-lbl">Indsatsvurdering (1–10)</label>
+              <div class="scale-row" id="scale-btns">
+                <button class="scale-btn" onclick="setScale(1)">1</button>
+                <button class="scale-btn" onclick="setScale(2)">2</button>
+                <button class="scale-btn" onclick="setScale(3)">3</button>
+                <button class="scale-btn" onclick="setScale(4)">4</button>
+                <button class="scale-btn" onclick="setScale(5)">5</button>
+                <button class="scale-btn" onclick="setScale(6)">6</button>
+                <button class="scale-btn" onclick="setScale(7)">7</button>
+                <button class="scale-btn" onclick="setScale(8)">8</button>
+                <button class="scale-btn" onclick="setScale(9)">9</button>
+                <button class="scale-btn" onclick="setScale(10)">10</button>
+              </div>
+            </div>
+            <div class="fld" style="margin-bottom:0">
+              <label class="fld-lbl">Ønsker du justeringer?</label>
+              <textarea class="fld-ta" id="ci-adj" placeholder="Kost, træning, struktur..."></textarea>
+            </div>
+          </div>
+
+          <button class="submit-btn" id="ci-btn" onclick="submitCI()">
+            Send check-in →
+          </button>
+        </div>
+
+        <div class="success-box" id="ci-success">
+          <div class="suc-icon">✅</div>
+          <div class="suc-title">Check-in sendt!</div>
+          <div class="suc-txt">Din rapport er modtaget.<br>Hamza vender tilbage inden 24 timer.</div>
+          <button class="submit-btn" style="max-width:200px;margin:20px auto 0" onclick="resetCI()">Nyt check-in</button>
+        </div>
+      </div>
+
+      <!-- ── OPSTARTSSKEMA ── -->
+      <div id="page-intake" class="page">
+        <div class="page-title">Opstartsskema</div>
+        <div class="page-sub" id="intake-step-lbl">Trin 1 af 4</div>
+
+        <div id="intake-form">
+          <div class="step-prog">
+            <div class="step-seg done" id="sp1"></div>
+            <div class="step-seg" id="sp2"></div>
+            <div class="step-seg" id="sp3"></div>
+            <div class="step-seg" id="sp4"></div>
+          </div>
+
+          <div class="step-form on" id="sf1">
+            <div class="card">
+              <div class="fld-row">
+                <div class="fld">
+                  <label class="fld-lbl">Fuldt navn</label>
+                  <input class="fld-input" id="in-name" placeholder="Dit navn">
+                </div>
+                <div class="fld">
+                  <label class="fld-lbl">Alder</label>
+                  <input class="fld-input" id="in-age" type="number" placeholder="fx 25">
+                </div>
+              </div>
+              <div class="fld-row">
+                <div class="fld">
+                  <label class="fld-lbl">Køn</label>
+                  <select class="fld-select" id="in-gender">
+                    <option value="">Vælg...</option>
+                    <option>Mand</option>
+                    <option>Kvinde</option>
+                  </select>
+                </div>
+                <div class="fld">
+                  <label class="fld-lbl">Erhverv</label>
+                  <input class="fld-input" id="in-occ" placeholder="fx kontorjob">
+                </div>
+              </div>
+              <div class="fld-row">
+                <div class="fld">
+                  <label class="fld-lbl">Højde (cm)</label>
+                  <input class="fld-input" id="in-h" type="number" placeholder="180">
+                </div>
+                <div class="fld">
+                  <label class="fld-lbl">Nuværende vægt (kg)</label>
+                  <input class="fld-input" id="in-w" type="number" placeholder="75">
+                </div>
+              </div>
+            </div>
+            <div class="btn-row">
+              <button class="submit-btn" onclick="goStep(2)">Næste →</button>
+            </div>
+          </div>
+
+          <div class="step-form" id="sf2">
+            <div class="card">
+              <div class="fld">
+                <label class="fld-lbl">Kostallergier</label>
+                <div class="cb-grp" id="cb-all">
+                  <div class="cb-item" onclick="toggleCb(this)"><div class="cb-dot"></div>Laktose</div>
+                  <div class="cb-item" onclick="toggleCb(this)"><div class="cb-dot"></div>Gluten</div>
+                  <div class="cb-item" onclick="toggleCb(this)"><div class="cb-dot"></div>Nødder</div>
+                  <div class="cb-item" onclick="toggleCb(this)"><div class="cb-dot"></div>Æg</div>
+                  <div class="cb-item" onclick="toggleCb(this)"><div class="cb-dot"></div>Skaldyr</div>
+                  <div class="cb-item" onclick="toggleCb(this)"><div class="cb-dot"></div>Ingen</div>
+                </div>
+              </div>
+              <div class="fld">
+                <label class="fld-lbl">Skader eller smerter?</label>
+                <textarea class="fld-ta" id="in-inj" placeholder="Beskriv evt. skader..."></textarea>
+              </div>
+              <div class="fld" style="margin-bottom:0">
+                <label class="fld-lbl">Typisk dags kost</label>
+                <textarea class="fld-ta" id="in-diet" style="min-height:100px" placeholder="Morgenmad, frokost, aftensmad..."></textarea>
+              </div>
+            </div>
+            <div class="btn-row">
+              <button class="btn-back" onclick="goStep(1)">← Tilbage</button>
+              <button class="submit-btn" onclick="goStep(3)">Næste →</button>
+            </div>
+          </div>
+
+          <div class="step-form" id="sf3">
+            <div class="card">
+              <div class="fld">
+                <label class="fld-lbl">Aktivitetsniveau</label>
+                <div class="cb-grp" id="cb-act">
+                  <div class="cb-item" onclick="selOne(this,'cb-act')"><div class="cb-dot"></div>Inaktiv</div>
+                  <div class="cb-item" onclick="selOne(this,'cb-act')"><div class="cb-dot"></div>Let aktiv (1-2x/uge)</div>
+                  <div class="cb-item" onclick="selOne(this,'cb-act')"><div class="cb-dot"></div>Moderat aktiv (3-4x/uge)</div>
+                  <div class="cb-item" onclick="selOne(this,'cb-act')"><div class="cb-dot"></div>Meget aktiv (5+/uge)</div>
+                </div>
+              </div>
+              <div class="fld-row">
+                <div class="fld">
+                  <label class="fld-lbl">År du har trænet</label>
+                  <input class="fld-input" id="in-yrs" type="number" placeholder="fx 2">
+                </div>
+                <div class="fld">
+                  <label class="fld-lbl">Tid per session</label>
+                  <select class="fld-select" id="in-dur">
+                    <option value="">Vælg...</option>
+                    <option>45 min</option><option>60 min</option>
+                    <option>75 min</option><option>90 min</option>
+                  </select>
+                </div>
+              </div>
+              <div class="fld">
+                <label class="fld-lbl">Nuværende program</label>
+                <textarea class="fld-ta" id="in-prog" placeholder="fx PPL, Fullbody..."></textarea>
+              </div>
+              <div class="fld" style="margin-bottom:0">
+                <label class="fld-lbl">Bedste løft</label>
+                <textarea class="fld-ta" id="in-lifts" placeholder="fx Squat 100kg 4x5..."></textarea>
+              </div>
+            </div>
+            <div class="btn-row">
+              <button class="btn-back" onclick="goStep(2)">← Tilbage</button>
+              <button class="submit-btn" onclick="goStep(4)">Næste →</button>
+            </div>
+          </div>
+
+          <div class="step-form" id="sf4">
+            <div class="card">
+              <div class="fld">
+                <label class="fld-lbl">Primært mål</label>
+                <div class="cb-grp" id="cb-goal">
+                  <div class="cb-item" onclick="selOne(this,'cb-goal')"><div class="cb-dot"></div>Tabe fedt</div>
+                  <div class="cb-item" onclick="selOne(this,'cb-goal')"><div class="cb-dot"></div>Bygge muskler</div>
+                  <div class="cb-item" onclick="selOne(this,'cb-goal')"><div class="cb-dot"></div>Begge dele</div>
+                  <div class="cb-item" onclick="selOne(this,'cb-goal')"><div class="cb-dot"></div>Generel sundhed</div>
+                </div>
+              </div>
+              <div class="fld-row">
+                <div class="fld">
+                  <label class="fld-lbl">Nuværende vægt</label>
+                  <input class="fld-input" id="in-cw" type="number" placeholder="fx 75">
+                </div>
+                <div class="fld">
+                  <label class="fld-lbl">Målvægt</label>
+                  <input class="fld-input" id="in-tw" type="number" placeholder="fx 82">
+                </div>
+              </div>
+              <div class="fld">
+                <label class="fld-lbl">Kortsigtede mål (3 mdr)</label>
+                <textarea class="fld-ta" id="in-st" placeholder="Hvad vil du opnå..."></textarea>
+              </div>
+              <div class="fld">
+                <label class="fld-lbl">Din 'why'</label>
+                <textarea class="fld-ta" id="in-why" placeholder="Hvorfor er disse mål vigtige..."></textarea>
+              </div>
+              <div class="fld" style="margin-bottom:0">
+                <label class="fld-lbl">Hvad har stoppet dig tidligere?</label>
+                <textarea class="fld-ta" id="in-obs" placeholder="Vær ærlig..."></textarea>
+              </div>
+            </div>
+            <div class="btn-row">
+              <button class="btn-back" onclick="goStep(3)">← Tilbage</button>
+              <button class="submit-btn" id="intake-btn" onclick="submitIntake()">Send opstartsskema →</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="success-box" id="intake-success">
+          <div class="suc-icon">📬</div>
+          <div class="suc-title">Skema modtaget!</div>
+          <div class="suc-txt">Hamza gennemgår dit skema og kontakter dig inden 48 timer med dit personlige program.</div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottomnav">
+    <div class="bn-items">
+      <button class="bn-item on" id="bn-dashboard" onclick="nav('dashboard')">
+        <span class="bn-icon">⚡</span>Hjem
+      </button>
+      <button class="bn-item" id="bn-kost" onclick="nav('kost')">
+        <span class="bn-icon">🥗</span>Kost
+      </button>
+      <button class="bn-item" id="bn-traning" onclick="nav('traning')">
+        <span class="bn-icon">💪</span>Træning
+      </button>
+      <button class="bn-item" id="bn-progress" onclick="nav('progress')">
+        <span class="bn-icon">📈</span>Fremgang
+      </button>
+      <button class="bn-item" id="bn-checkin" onclick="nav('checkin')">
+        <span class="bn-icon">📋</span>Check-in
+      </button>
+    </div>
+  </nav>
+</div>
+
+<script>
+// ============================================================
+// SUPABASE KONFIGURATION
+// Erstat disse to værdier med dine egne fra supabase.com
+// ============================================================
+const SUPABASE_URL = 'https://rtcayuwapitueckgprzc.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0Y2F5dXdhcGl0dWVja2dwcnpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NzA2MzAsImV4cCI6MjA5MzA0NjYzMH0.uwMOD1w3uvQFGLCTpB8kkGPxM1z1pRvzF2VEANr3VME';
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  }
+});
+
+// ── STATE ────────────────────────────────────────────────────
+let user = null;
+let clientData = null;
+let ciScale = null;
+let intakeStep = 1;
+let restInterval = null;
+let weightChart = null;
+let circleCharts = {};
+
+// ── AUTH HELPERS ─────────────────────────────────────────────
+function showErr(msg) {
+  const el = document.getElementById('auth-err');
+  document.getElementById('auth-ok').style.display = 'none';
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function showOk(msg) {
+  const el = document.getElementById('auth-ok');
+  document.getElementById('auth-err').style.display = 'none';
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function clearMsgs() {
+  document.getElementById('auth-err').style.display = 'none';
+  document.getElementById('auth-ok').style.display = 'none';
+}
+function setLoading(id, loading, txt) {
+  const btn = document.getElementById(id);
+  btn.disabled = loading;
+  btn.innerHTML = loading ? '<span class="spinner"></span>' : txt;
+}
+
+function authTab(tab) {
+  clearMsgs();
+  document.querySelectorAll('.auth-tab').forEach((t,i) =>
+    t.classList.toggle('on', (i===0&&tab==='login')||(i===1&&tab==='signup')));
+  document.getElementById('login-form').style.display = tab==='login' ? 'block' : 'none';
+  document.getElementById('signup-form').style.display = tab==='signup' ? 'block' : 'none';
+}
+
+async function login() {
+  const email = document.getElementById('l-email').value.trim();
+  const pw = document.getElementById('l-pw').value;
+  if (!email || !pw) { showErr('Udfyld e-mail og adgangskode.'); return; }
+  setLoading('login-btn', true);
+  const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+  setLoading('login-btn', false, 'Log ind');
+  if (error) {
+    if (error.message.includes('Email not confirmed'))
+      showErr('Bekræft din e-mail eller kontakt din coach.');
+    else if (error.message.includes('Invalid'))
+      showErr('Forkert e-mail eller adgangskode.');
+    else showErr(error.message);
+  }
+}
+
+async function signup() {
+  const name = document.getElementById('s-name').value.trim();
+  const email = document.getElementById('s-email').value.trim();
+  const pw = document.getElementById('s-pw').value;
+  if (!name||!email||!pw) { showErr('Udfyld alle felter.'); return; }
+  if (pw.length < 6) { showErr('Adgangskode skal være mindst 6 tegn.'); return; }
+  setLoading('signup-btn', true);
+  const { error } = await sb.auth.signUp({
+    email, password: pw,
+    options: { data: { full_name: name }, emailRedirectTo: window.location.origin }
+  });
+  setLoading('signup-btn', false, 'Opret konto');
+  if (error) {
+    if (error.message.includes('rate limit'))
+      showErr('For mange forsøg. Vent 10 min og prøv igen.');
+    else if (error.message.includes('already registered'))
+      showErr('E-mail allerede registreret. Log ind i stedet.');
+    else showErr(error.message);
+  } else {
+    showOk('Konto oprettet! Log ind med din e-mail og adgangskode.');
+    authTab('login');
+    document.getElementById('l-email').value = email;
+  }
+}
+
+async function logout() {
+  await sb.auth.signOut();
+}
+
+// ── APP INIT ─────────────────────────────────────────────────
+async function initApp(u) {
+  user = u;
+  document.getElementById('auth').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+
+  const name = u.user_metadata?.full_name || u.email.split('@')[0];
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Godmorgen' : hour < 18 ? 'God dag' : 'Godaften';
+  document.getElementById('dash-title').textContent = `${greeting}, ${name} 👋`;
+  document.getElementById('sb-user').textContent = u.email;
+
+  buildStreak();
+  await loadData();
+}
+
+// ── LOAD DATA ────────────────────────────────────────────────
+async function loadData() {
+  // Load client_data
+  const { data: cd } = await sb.from('client_data').select('*')
+    .eq('user_id', user.id).maybeSingle();
+  clientData = cd;
+
+  if (cd) {
+    // Dashboard stats
+    document.getElementById('dash-sub').textContent =
+      `Uge ${cd.week || 1} · ${cd.program || 'Program afventer'}`;
+    document.getElementById('d-weight').innerHTML =
+      `${cd.current_weight || '—'}<span class="stat-unit">kg</span>`;
+    document.getElementById('d-weight-sub').textContent =
+      cd.current_weight && cd.start_weight
+        ? `Start: ${cd.start_weight}kg`
+        : 'Ingen data endnu';
+    document.getElementById('d-target').innerHTML =
+      `${cd.target_weight || '—'}<span class="stat-unit">kg</span>`;
+    document.getElementById('d-target-sub').textContent =
+      cd.current_weight && cd.target_weight
+        ? `${Math.abs(cd.target_weight - cd.current_weight).toFixed(1)}kg tilbage`
+        : '—';
+    document.getElementById('d-program').textContent =
+      cd.program ? cd.program.split(' ')[0] : '—';
+    document.getElementById('d-week').textContent =
+      `Uge ${cd.week || 1}`;
+
+    // Progress page
+    document.getElementById('p-weight').innerHTML =
+      `${cd.current_weight || '—'}<span class="stat-unit">kg</span>`;
+    document.getElementById('p-start').textContent =
+      `Startvægt: ${cd.start_weight || '—'}kg`;
+    if (cd.current_weight && cd.target_weight) {
+      const diff = (cd.current_weight - (cd.start_weight || cd.current_weight)).toFixed(1);
+      document.getElementById('p-change').innerHTML =
+        `<span class="${diff > 0 ? 'up' : diff < 0 ? 'down' : ''}">${diff > 0 ? '+' : ''}${diff} kg siden start</span>`;
+      document.getElementById('p-tomaal').innerHTML =
+        `${Math.abs(cd.target_weight - cd.current_weight).toFixed(1)}<span class="stat-unit">kg</span>`;
+    }
+
+    // Macros
+    buildMacroCircles(cd);
+    buildKostplan(cd);
+    buildTraening(cd);
+  } else {
+    document.getElementById('dash-sub').textContent = 'Udfyld opstartsskema for at komme i gang';
+  }
+
+  // Load checkins
+  const { data: checkins } = await sb.from('checkins').select('*')
+    .eq('user_id', user.id).order('created_at', { ascending: false }).limit(10);
+
+  if (checkins && checkins.length > 0) {
+    buildWeightChart(checkins);
+    buildLastCI(checkins[0]);
+    buildProgCI(checkins[0]);
+    document.getElementById('ci-week-lbl').textContent =
+      `Uge ${(clientData?.week || 1)} · Send inden søndag`;
+  }
+
+  // Check intake
+  const { data: intake } = await sb.from('intake_forms').select('id')
+    .eq('user_id', user.id).maybeSingle();
+  if (intake) {
+    document.getElementById('intake-form').style.display = 'none';
+    document.getElementById('intake-success').classList.add('show');
+    document.getElementById('intake-success').querySelector('.suc-txt').textContent =
+      'Du har allerede indsendt dit opstartsskema. Hamza kontakter dig snart.';
+  }
+}
+
+// ── MACRO CIRCLES ────────────────────────────────────────────
+function buildMacroCircles(cd) {
+  const macros = [
+    { id: 'kcal', val: cd.kcal_goal, goal: cd.kcal_goal, color: '#c9a84c', lbl: 'mål' },
+    { id: 'prot', val: cd.prot_goal, goal: cd.prot_goal, color: '#60a5fa', lbl: 'mål' },
+    { id: 'kh',   val: cd.kh_goal,   goal: cd.kh_goal,   color: '#4ade80', lbl: 'mål' },
+  ];
+  macros.forEach(m => {
+    if (!m.goal) return;
+    const pct = Math.min((m.val / m.goal) * 100, 100);
+    document.getElementById(`cv-${m.id}`).textContent = m.val || '—';
+    document.getElementById(`cn-${m.id}`).textContent = `mål: ${m.goal}`;
+    const ctx = document.getElementById(`c-${m.id}`).getContext('2d');
+    if (circleCharts[m.id]) circleCharts[m.id].destroy();
+    circleCharts[m.id] = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        datasets: [{
+          data: [pct, 100 - pct],
+          backgroundColor: [m.color, '#1e1e1e'],
+          borderWidth: 0,
+        }]
+      },
+      options: {
+        cutout: '75%', responsive: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        animation: { duration: 800, easing: 'easeInOutQuart' }
+      }
+    });
+  });
+}
+
+// ── WEIGHT CHART ─────────────────────────────────────────────
+function buildWeightChart(checkins) {
+  const data = checkins.filter(c => c.weight).slice(0, 8).reverse();
+  if (!data.length) return;
+  const ctx = document.getElementById('weight-chart').getContext('2d');
+  if (weightChart) weightChart.destroy();
+  weightChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.map(d => `Uge ${d.week}`),
+      datasets: [{
+        data: data.map(d => d.weight),
+        borderColor: '#c9a84c',
+        backgroundColor: 'rgba(201,168,76,0.08)',
+        pointBackgroundColor: '#c9a84c',
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        tension: 0.4,
+        fill: true,
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: '#1e1e1e' }, ticks: { color: '#666', font: { size: 11 } } },
+        y: {
+          grid: { color: '#1e1e1e' },
+          ticks: { color: '#666', font: { size: 11 } },
+          suggestedMin: Math.min(...data.map(d => d.weight)) - 1,
+          suggestedMax: Math.max(...data.map(d => d.weight)) + 1,
+        }
+      }
+    }
+  });
+}
+
+// ── STREAK ───────────────────────────────────────────────────
+function buildStreak() {
+  const days = ['MAN','TIR','ONS','TOR','FRE','LØR','SØN'];
+  const today = new Date().getDay();
+  const todayIdx = today === 0 ? 6 : today - 1;
+  // Demo streak — in production, load from checkins
+  const done = [true, true, true, false, false, false, false];
+  const html = days.map((d, i) => `
+    <div class="streak-day ${done[i] ? 'done' : ''} ${i === todayIdx ? 'today' : ''}">
+      <div class="streak-dot"></div>
+      <div>${d}</div>
+    </div>
+  `).join('');
+  document.getElementById('streak-row').innerHTML = html;
+}
+
+// ── LAST CI ───────────────────────────────────────────────────
+function buildLastCI(ci) {
+  document.getElementById('last-ci-card').style.display = 'block';
+  document.getElementById('last-ci-content').innerHTML = `
+    <div class="info-row">
+      <div class="ir-key">Vægt</div>
+      <div class="ir-val">${ci.weight || '—'} kg</div>
+    </div>
+    <div class="info-row">
+      <div class="ir-key">Træning</div>
+      <div class="ir-val">${ci.training_done || '—'}</div>
+    </div>
+    <div class="info-row">
+      <div class="ir-key">Kostplan</div>
+      <div class="ir-val">${ci.meal_plan || '—'}</div>
+    </div>
+    <div class="info-row">
+      <div class="ir-key">Indsats</div>
+      <div class="ir-val">${ci.score ? ci.score + '/10' : '—'}</div>
+    </div>
+  `;
+}
+
+function buildProgCI(ci) {
+  document.getElementById('prog-ci').innerHTML = `
+    <div class="info-row">
+      <div class="ir-key">Morgenvægt (uge ${ci.week})</div>
+      <div class="ir-val">${ci.weight || '—'} kg</div>
+    </div>
+    <div class="info-row">
+      <div class="ir-key">Træning</div>
+      <div class="ir-val">${ci.training_done || '—'}</div>
+    </div>
+    <div class="info-row">
+      <div class="ir-key">Kostplan</div>
+      <div class="ir-val">${ci.meal_plan || '—'}</div>
+    </div>
+    <div class="info-row">
+      <div class="ir-key">Velvære</div>
+      <div class="ir-val">${ci.wellbeing || '—'}</div>
+    </div>
+    <div class="info-row">
+      <div class="ir-key">Indsats</div>
+      <div class="ir-val">${ci.score || '—'}/10</div>
+    </div>
+  `;
+}
+
+// ── KOSTPLAN ─────────────────────────────────────────────────
+const DEMO_MEALS = [
+  {
+    name: 'Morgenmad', icon: '🌅', color: 'rgba(201,168,76,0.15)', kcal: 620,
+    items: [
+      { name: 'Havregryn (tørre)', gram: '90g', kcal: 338 },
+      { name: 'Skyr (naturel)', gram: '200g', kcal: 134 },
+      { name: 'Blåbær', gram: '100g', kcal: 57 },
+      { name: 'Chiafrø', gram: '15g', kcal: 73 },
+    ]
+  },
+  {
+    name: 'Pre-workout', icon: '⚡', color: 'rgba(96,165,250,0.15)', kcal: 480,
+    items: [
+      { name: 'Rice Meal', gram: '70g', kcal: 254 },
+      { name: 'Whey Protein', gram: '40g', kcal: 156 },
+      { name: 'Banan', gram: '120g', kcal: 107 },
+    ]
+  },
+  {
+    name: 'Frokost', icon: '☀️', color: 'rgba(74,222,128,0.15)', kcal: 740,
+    items: [
+      { name: 'Kyllingebryst (kogt)', gram: '220g', kcal: 363 },
+      { name: 'Ris (hvid, tørre)', gram: '80g', kcal: 279 },
+      { name: 'Broccoli (rå)', gram: '150g', kcal: 51 },
+      { name: 'Olivenolie', gram: '10g', kcal: 88 },
+    ]
+  },
+  {
+    name: 'Aftensmad', icon: '🌙', color: 'rgba(167,139,250,0.15)', kcal: 760,
+    items: [
+      { name: 'Laks (rå)', gram: '200g', kcal: 416 },
+      { name: 'Søde kartofler', gram: '250g', kcal: 215 },
+      { name: 'Spinat (rå)', gram: '100g', kcal: 23 },
+      { name: 'Olivenolie', gram: '12g', kcal: 106 },
+    ]
+  },
+  {
+    name: 'Snack', icon: '🍎', color: 'rgba(251,146,60,0.15)', kcal: 255,
+    items: [
+      { name: 'Skyr (naturel)', gram: '200g', kcal: 134 },
+      { name: 'Mandler', gram: '25g', kcal: 145 },
+    ]
+  },
+];
+
+function buildKostplan(cd) {
+  if (!cd || !cd.kcal_goal) return;
+  document.getElementById('kost-sub').textContent =
+    `${cd.kcal_goal} kcal · ${cd.prot_goal}g protein`;
+  let html = '';
+  DEMO_MEALS.forEach((m, i) => {
+    html += `
+      <div class="meal">
+        <div class="meal-hdr" onclick="toggleMeal(${i})">
+          <div class="meal-left">
+            <div class="meal-icon" style="background:${m.color}">${m.icon}</div>
+            <div>
+              <div class="meal-name">${m.name}</div>
+              <div class="meal-kcal">${m.kcal} kcal</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:11px;color:var(--muted)">${m.items.length} ingredienser</span>
+            <span class="meal-chevron" id="chev-${i}">▼</span>
+          </div>
+        </div>
+        <div class="meal-body" id="meal-body-${i}">
+          ${m.items.map(it => `
+            <div class="food-item">
+              <div class="food-name">${it.name}</div>
+              <div class="food-info">
+                <div class="food-gram">${it.gram}</div>
+                <div class="food-kcal">${it.kcal} kcal</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  });
+  document.getElementById('kost-content').innerHTML = html;
+}
+
+function toggleMeal(i) {
+  const body = document.getElementById(`meal-body-${i}`);
+  const chev = document.getElementById(`chev-${i}`);
+  body.classList.toggle('open');
+  chev.classList.toggle('open');
+}
+
+// ── TRÆNING ───────────────────────────────────────────────────
+const DEMO_EXERCISES = [
+  {
+    name: 'Barbell Squat', muscle: 'Quadriceps', sets: [
+      { reps: '6-10', kg: '' },
+      { reps: '6-10', kg: '' },
+      { reps: '6-10', kg: '' },
+      { reps: '6-10', kg: '' },
+    ]
+  },
+  {
+    name: 'Romanian Deadlift', muscle: 'Baglår', sets: [
+      { reps: '8-12', kg: '' },
+      { reps: '8-12', kg: '' },
+      { reps: '8-12', kg: '' },
+    ]
+  },
+  {
+    name: 'Barbell Bench Press', muscle: 'Bryst', sets: [
+      { reps: '6-10', kg: '' },
+      { reps: '6-10', kg: '' },
+      { reps: '6-10', kg: '' },
+      { reps: '6-10', kg: '' },
+    ]
+  },
+  {
+    name: 'Pull-Up', muscle: 'Ryg', sets: [
+      { reps: '6-10', kg: '' },
+      { reps: '6-10', kg: '' },
+      { reps: '6-10', kg: '' },
+    ]
+  },
+  {
+    name: 'Barbell OHP', muscle: 'Skuldre', sets: [
+      { reps: '8-12', kg: '' },
+      { reps: '8-12', kg: '' },
+      { reps: '8-12', kg: '' },
+    ]
+  },
+];
+
+let doneSets = {};
+
+function buildTraening(cd) {
+  if (!cd || !cd.program) return;
+  document.getElementById('traning-sub').textContent = cd.program;
+  let html = '';
+  DEMO_EXERCISES.forEach((ex, ei) => {
+    html += `
+      <div class="exercise">
+        <div class="ex-hdr" onclick="toggleEx(${ei})">
+          <div>
+            <div class="ex-name">${ex.name}</div>
+            <div class="ex-meta">${ex.muscle} · ${ex.sets.length} sæt · RPE 8</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="ex-badge" id="ex-badge-${ei}">0/${ex.sets.length}</span>
+            <span style="color:var(--muted);font-size:12px" id="ex-chev-${ei}">▼</span>
+          </div>
+        </div>
+        <div class="ex-body" id="ex-body-${ei}">
+          ${ex.sets.map((s, si) => `
+            <div class="set-row" id="set-${ei}-${si}">
+              <div class="set-num" id="snum-${ei}-${si}">${si + 1}</div>
+              <div>
+                <div class="set-lbl">Reps</div>
+                <input class="set-input" value="${s.reps}" id="reps-${ei}-${si}">
+              </div>
+              <div>
+                <div class="set-lbl">KG</div>
+                <input class="set-input" type="number" placeholder="—" id="kg-${ei}-${si}">
+              </div>
+              <button class="set-done-btn" id="sdone-${ei}-${si}"
+                onclick="markSet(${ei},${si})">✓</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  });
+  document.getElementById('traning-content').innerHTML = html;
+}
+
+function toggleEx(i) {
+  const body = document.getElementById(`ex-body-${i}`);
+  const chev = document.getElementById(`ex-chev-${i}`);
+  body.classList.toggle('open');
+  chev.textContent = body.classList.contains('open') ? '▲' : '▼';
+}
+
+function markSet(ei, si) {
+  const key = `${ei}-${si}`;
+  const isDone = doneSets[key];
+  doneSets[key] = !isDone;
+
+  document.getElementById(`snum-${ei}-${si}`).classList.toggle('done', !isDone);
+  document.getElementById(`sdone-${ei}-${si}`).classList.toggle('done', !isDone);
+
+  // Update badge
+  const ex = DEMO_EXERCISES[ei];
+  const count = ex.sets.filter((_, si2) => doneSets[`${ei}-${si2}`]).length;
+  document.getElementById(`ex-badge-${ei}`).textContent = `${count}/${ex.sets.length}`;
+
+  // Start rest timer
+  if (!isDone) startRest(90);
+}
+
+function startRest(seconds) {
+  if (restInterval) clearInterval(restInterval);
+  let remaining = seconds;
+  document.getElementById('rest-timer').classList.add('show');
+  updateRestDisplay(remaining);
+  restInterval = setInterval(() => {
+    remaining--;
+    updateRestDisplay(remaining);
+    if (remaining <= 0) stopRest();
+  }, 1000);
+}
+
+function updateRestDisplay(s) {
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  document.getElementById('rest-time').textContent =
+    `${m}:${sec.toString().padStart(2, '0')}`;
+}
+
+function stopRest() {
+  clearInterval(restInterval);
+  document.getElementById('rest-timer').classList.remove('show');
+}
+
+// ── CHECK-IN ─────────────────────────────────────────────────
+function setScale(n) {
+  ciScale = n;
+  document.querySelectorAll('.scale-btn').forEach((b, i) =>
+    b.classList.toggle('on', i + 1 === n));
+}
+
+async function submitCI() {
+  const btn = document.getElementById('ci-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Sender...';
+
+  const { error } = await sb.from('checkins').insert({
+    user_id: user.id,
+    week: clientData?.week || 1,
+    weight: parseFloat(document.getElementById('ci-w').value) || null,
+    training_done: document.getElementById('ci-tr').value,
+    progression: document.getElementById('ci-pr').value,
+    meal_plan: document.getElementById('ci-mp').value,
+    wellbeing: document.getElementById('ci-wb').value,
+    score: ciScale,
+    adjustments: document.getElementById('ci-adj').value,
+  });
+
+  if (error) {
+    btn.disabled = false;
+    btn.textContent = 'Send check-in →';
+    alert('Fejl: ' + error.message);
+    return;
+  }
+
+  // Log weight
+  const w = parseFloat(document.getElementById('ci-w').value);
+  if (w && clientData) {
+    await sb.from('client_data').update({ current_weight: w })
+      .eq('user_id', user.id);
+    await sb.from('weight_log').insert({
+      user_id: user.id,
+      week: clientData.week || 1,
+      weight: w
+    });
+  }
+
+  document.getElementById('ci-form').style.display = 'none';
+  document.getElementById('ci-success').classList.add('show');
+  await loadData();
+}
+
+function resetCI() {
+  document.getElementById('ci-form').style.display = 'block';
+  document.getElementById('ci-success').classList.remove('show');
+  ['ci-w','ci-tr','ci-pr','ci-mp','ci-wb','ci-adj'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  ciScale = null;
+  document.querySelectorAll('.scale-btn').forEach(b => b.classList.remove('on'));
+  const btn = document.getElementById('ci-btn');
+  btn.disabled = false;
+  btn.textContent = 'Send check-in →';
+}
+
+// ── INTAKE ────────────────────────────────────────────────────
+function goStep(n) {
+  document.getElementById(`sf${intakeStep}`).classList.remove('on');
+  intakeStep = n;
+  document.getElementById(`sf${n}`).classList.add('on');
+  document.getElementById('intake-step-lbl').textContent = `Trin ${n} af 4`;
+  for (let i = 1; i <= 4; i++)
+    document.getElementById(`sp${i}`).classList.toggle('done', i <= n);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function getCb(grpId) {
+  return Array.from(document.querySelectorAll(`#${grpId} .cb-item.on`))
+    .map(el => el.textContent.trim()).join(', ');
+}
+
+function toggleCb(el) {
+  el.classList.toggle('on');
+}
+
+function selOne(el, grpId) {
+  document.querySelectorAll(`#${grpId} .cb-item`).forEach(i => i.classList.remove('on'));
+  el.classList.add('on');
+}
+
+async function submitIntake() {
+  const btn = document.getElementById('intake-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Sender...';
+
+  const { error } = await sb.from('intake_forms').insert({
+    user_id: user.id,
+    full_name: document.getElementById('in-name').value,
+    age: parseInt(document.getElementById('in-age').value) || null,
+    gender: document.getElementById('in-gender').value,
+    occupation: document.getElementById('in-occ').value,
+    height: parseFloat(document.getElementById('in-h').value) || null,
+    weight: parseFloat(document.getElementById('in-w').value) || null,
+    allergies: getCb('cb-all'),
+    injuries: document.getElementById('in-inj').value,
+    typical_diet: document.getElementById('in-diet').value,
+    activity_level: getCb('cb-act'),
+    years_training: parseInt(document.getElementById('in-yrs').value) || null,
+    session_duration: document.getElementById('in-dur').value,
+    current_program: document.getElementById('in-prog').value,
+    best_lifts: document.getElementById('in-lifts').value,
+    primary_goal: getCb('cb-goal'),
+    target_weight: parseFloat(document.getElementById('in-tw').value) || null,
+    short_term_goals: document.getElementById('in-st').value,
+    why: document.getElementById('in-why').value,
+    obstacles: document.getElementById('in-obs').value,
+  });
+
+  if (error) {
+    btn.disabled = false;
+    btn.textContent = 'Send opstartsskema →';
+    alert('Fejl: ' + error.message);
+    return;
+  }
+
+  // Create initial client_data
+  if (!clientData) {
+    await sb.from('client_data').insert({
+      user_id: user.id,
+      current_weight: parseFloat(document.getElementById('in-cw').value) || null,
+      start_weight: parseFloat(document.getElementById('in-cw').value) || null,
+      target_weight: parseFloat(document.getElementById('in-tw').value) || null,
+      week: 1,
+    });
+  }
+
+  document.getElementById('intake-form').style.display = 'none';
+  document.getElementById('intake-success').classList.add('show');
+}
+
+// ── NAV ───────────────────────────────────────────────────────
+function nav(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.sb-link').forEach(b => b.classList.remove('on'));
+  document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('on'));
+  document.getElementById(`page-${id}`).classList.add('on');
+  document.getElementById(`sb-${id}`)?.classList.add('on');
+  document.getElementById(`bn-${id}`)?.classList.add('on');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── AUTH STATE ────────────────────────────────────────────────
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (session?.user) {
+    await initApp(session.user);
+  } else {
+    user = null;
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('auth').style.display = 'flex';
+  }
+});
+
+// ============================================================
+// SQL SCHEMA — Kør dette i Supabase SQL Editor
+// ============================================================
+/*
+create table if not exists public.profiles (
+  id uuid references auth.users on delete cascade primary key,
+  email text, full_name text,
+  created_at timestamptz default now()
+);
+create table if not exists public.client_data (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade unique,
+  kcal_goal int, prot_goal int, kh_goal int, fedt_goal int,
+  program text, week int default 1,
+  start_weight numeric, current_weight numeric, target_weight numeric,
+  updated_at timestamptz default now()
+);
+create table if not exists public.checkins (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade,
+  week int, weight numeric, training_done text,
+  progression text, meal_plan text, wellbeing text,
+  score int, adjustments text,
+  created_at timestamptz default now()
+);
+create table if not exists public.intake_forms (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade,
+  full_name text, age int, gender text, height numeric, weight numeric,
+  occupation text, allergies text, injuries text, typical_diet text,
+  activity_level text, years_training int, session_duration text,
+  current_program text, best_lifts text, primary_goal text,
+  target_weight numeric, short_term_goals text, why text, obstacles text,
+  submitted_at timestamptz default now()
+);
+create table if not exists public.weight_log (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade,
+  week int, weight numeric, logged_at timestamptz default now()
+);
+
+-- Enable RLS
+alter table public.profiles enable row level security;
+alter table public.client_data enable row level security;
+alter table public.checkins enable row level security;
+alter table public.intake_forms enable row level security;
+alter table public.weight_log enable row level security;
+
+-- Policies: users see own data
+create policy "own" on public.profiles for all using (auth.uid()=id) with check (auth.uid()=id);
+create policy "own" on public.client_data for all using (auth.uid()=user_id) with check (auth.uid()=user_id);
+create policy "own" on public.checkins for all using (auth.uid()=user_id) with check (auth.uid()=user_id);
+create policy "own" on public.intake_forms for all using (auth.uid()=user_id) with check (auth.uid()=user_id);
+create policy "own" on public.weight_log for all using (auth.uid()=user_id) with check (auth.uid()=user_id);
+
+-- Coach policies (all access)
+create policy "coach_all" on public.client_data for all using (true) with check (true);
+create policy "coach_all" on public.checkins for all using (true);
+create policy "coach_all" on public.intake_forms for all using (true);
+create policy "coach_all" on public.profiles for select using (true);
+*/
+</script>
+</body>
+</html>
