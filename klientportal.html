@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coaching Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  :root {
+    --bg: #080808;
+    --card: #111111;
+    --card2: #161616;
+    --border: #222222;
+    --border2: #2a2a2a;
+    --gold: #c9a84c;
+    --gold2: #e8c87a;
+    --text: #f0f0f0;
+    --text2: #888888;
+    --text3: #555555;
+    --green: #3ecf8e;
+    --red: #f04d4d;
+    --blue: #4d8bf0;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --sidebar-w: 240px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.5; }
+  
+  /* ======== AUTH ======== */
+  #auth-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 30% 20%, #1a1200 0%, #080808 60%);
+    position: relative; overflow: hidden;
+  }
+  #auth-screen::before {
+    content: ''; position: absolute; inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c9a84c' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+  .auth-box {
+    background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+    padding: 48px 44px; width: 100%; max-width: 420px; position: relative; z-index: 1;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+  }
+  .auth-logo { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 3px; color: var(--gold); margin-bottom: 6px; }
+  .auth-tagline { color: var(--text2); font-size: 13px; margin-bottom: 36px; }
+  .auth-tabs { display: flex; gap: 0; margin-bottom: 32px; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  .auth-tab {
+    flex: 1; padding: 10px; text-align: center; cursor: pointer; font-size: 14px; font-weight: 500;
+    background: transparent; border: none; color: var(--text2); transition: all 0.2s;
+  }
+  .auth-tab.active { background: var(--gold); color: #000; }
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: block; }
+  .form-input {
+    width: 100%; padding: 13px 16px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text); font-size: 14px; font-family: inherit;
+    transition: border-color 0.2s; outline: none;
+  }
+  .form-input:focus { border-color: var(--gold); }
+  .btn-primary {
+    width: 100%; padding: 14px; background: var(--gold); color: #000; border: none;
+    border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; cursor: pointer;
+    font-family: inherit; letter-spacing: 0.5px; transition: all 0.2s; margin-top: 8px;
+  }
+  .btn-primary:hover { background: var(--gold2); transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .auth-error {
+    background: rgba(240,77,77,0.1); border: 1px solid rgba(240,77,77,0.3);
+    border-radius: var(--radius-sm); padding: 12px 14px; margin-top: 14px;
+    color: var(--red); font-size: 13px; display: none;
+  }
+  .auth-error.show { display: block; }
+
+  /* ======== APP LAYOUT ======== */
+  #app-screen { display: none; min-height: 100vh; }
+  #app-screen.visible { display: flex; }
+  
+  .sidebar {
+    width: var(--sidebar-w); background: var(--card); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh;
+    z-index: 100; transition: transform 0.3s;
+  }
+  .sidebar-logo { padding: 28px 24px 20px; border-bottom: 1px solid var(--border); }
+  .sidebar-logo-text { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 3px; color: var(--gold); }
+  .sidebar-logo-sub { font-size: 11px; color: var(--text3); margin-top: 2px; text-transform: uppercase; letter-spacing: 1px; }
+  .sidebar-nav { flex: 1; padding: 16px 12px; overflow-y: auto; }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: var(--radius-sm);
+    cursor: pointer; color: var(--text2); font-size: 14px; font-weight: 500; transition: all 0.15s;
+    margin-bottom: 2px; border: 1px solid transparent;
+  }
+  .nav-item:hover { background: var(--card2); color: var(--text); }
+  .nav-item.active { background: rgba(201,168,76,0.1); color: var(--gold); border-color: rgba(201,168,76,0.2); }
+  .nav-icon { font-size: 18px; width: 20px; text-align: center; }
+  .sidebar-footer { padding: 16px 12px; border-top: 1px solid var(--border); }
+  .user-chip {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    background: var(--card2); border-radius: var(--radius-sm); border: 1px solid var(--border);
+  }
+  .user-avatar {
+    width: 32px; height: 32px; border-radius: 50%; background: var(--gold);
+    display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #000;
+    flex-shrink: 0;
+  }
+  .user-name { font-size: 13px; font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .btn-logout { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 16px; padding: 4px; transition: color 0.2s; }
+  .btn-logout:hover { color: var(--red); }
+
+  /* Main content */
+  .main { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; padding: 32px; max-width: calc(100vw - var(--sidebar-w)); }
+  
+  /* Bottom nav mobile */
+  .bottom-nav {
+    display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999;
+    background: var(--card); border-top: 1px solid var(--border);
+    padding: 10px 0 max(10px, env(safe-area-inset-bottom));
+    flex-direction: row; justify-content: space-around; align-items: center;
+  }
+  .bottom-nav-item {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 6px 12px; cursor: pointer; border-radius: var(--radius-sm);
+    font-size: 10px; color: var(--text3); transition: all 0.15s; border: none; background: none;
+  }
+  .bottom-nav-item .nav-icon { font-size: 20px; width: auto; }
+  .bottom-nav-item.active { color: var(--gold); }
+
+  /* Pages */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ======== COMPONENTS ======== */
+  .page-header { margin-bottom: 28px; }
+  .page-title { font-family: 'Bebas Neue', sans-serif; font-size: 42px; letter-spacing: 2px; line-height: 1; }
+  .page-sub { color: var(--text2); font-size: 14px; margin-top: 6px; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--border2); }
+  .card-sm { padding: 18px; }
+  .card-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px; color: var(--text2); margin-bottom: 12px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  .stat-value { font-family: 'Bebas Neue', sans-serif; font-size: 40px; letter-spacing: 1px; line-height: 1; }
+  .stat-label { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+  .stat-unit { font-family: 'DM Mono', monospace; font-size: 14px; color: var(--text2); }
+
+  /* Error banner */
+  #error-banner {
+    background: rgba(240,77,77,0.1); border: 1px solid rgba(240,77,77,0.25);
+    border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 20px;
+    color: var(--red); font-size: 13px; display: none; align-items: center; gap: 10px;
+  }
+  #error-banner.show { display: flex; }
+
+  /* Success toast */
+  #toast {
+    position: fixed; top: 24px; right: 24px; z-index: 99999;
+    background: var(--card); border: 1px solid var(--green); border-radius: var(--radius-sm);
+    padding: 14px 20px; color: var(--green); font-size: 14px; font-weight: 500;
+    display: flex; align-items: center; gap: 8px;
+    transform: translateX(120%); transition: transform 0.3s; max-width: 300px;
+  }
+  #toast.show { transform: translateX(0); }
+
+  /* Loading spinner */
+  .spinner {
+    width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--gold);
+    border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ======== DASHBOARD ======== */
+  .welcome-banner {
+    background: linear-gradient(135deg, #1a1200 0%, #110d00 60%, #0d0d0d 100%);
+    border: 1px solid rgba(201,168,76,0.2); border-radius: var(--radius);
+    padding: 32px 36px; margin-bottom: 24px; position: relative; overflow: hidden;
+  }
+  .welcome-banner::after {
+    content: ''; position: absolute; right: -40px; top: -40px;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 70%);
+  }
+  .welcome-banner h1 { font-family: 'Bebas Neue', sans-serif; font-size: 48px; letter-spacing: 3px; line-height: 1; }
+  .welcome-banner .week-label {
+    display: inline-block; padding: 4px 12px; background: rgba(201,168,76,0.15);
+    border: 1px solid rgba(201,168,76,0.3); border-radius: 20px;
+    font-size: 12px; color: var(--gold); text-transform: uppercase; letter-spacing: 1.5px;
+    margin-bottom: 12px;
+  }
+  .welcome-banner p { color: var(--text2); font-size: 15px; margin-top: 8px; }
+
+  .macro-ring-wrapper { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .macro-ring-wrapper canvas { max-width: 120px; max-height: 120px; }
+  .macro-ring-label { font-size: 13px; font-weight: 600; }
+  .macro-ring-sub { font-size: 11px; color: var(--text2); }
+
+  .streak-dots { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+  .streak-dot {
+    width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center; font-size: 10px;
+    color: var(--text3); font-weight: 600; transition: all 0.2s;
+  }
+  .streak-dot.done { background: var(--green); border-color: var(--green); color: #000; }
+  .streak-dot.today { border-color: var(--gold); color: var(--gold); }
+
+  /* ======== KOSTPLAN ======== */
+  .meal-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    margin-bottom: 12px; overflow: hidden;
+  }
+  .meal-header {
+    padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .meal-header:hover { background: var(--card2); }
+  .meal-title { font-weight: 600; font-size: 15px; }
+  .meal-kcal { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--gold); }
+  .meal-chevron { color: var(--text3); transition: transform 0.25s; font-size: 12px; }
+  .meal-body { display: none; border-top: 1px solid var(--border); }
+  .meal-body.open { display: block; }
+  .ingredient-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 20px; border-bottom: 1px solid var(--border);
+  }
+  .ingredient-row:last-child { border-bottom: none; }
+  .ingredient-name { font-size: 14px; }
+  .ingredient-meta { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text2); }
+
+  /* ======== TRÆNING ======== */
+  .exercise-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px; margin-bottom: 12px;
+  }
+  .exercise-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .exercise-meta { font-size: 13px; color: var(--text2); margin-bottom: 14px; }
+  .sets-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .set-btn {
+    width: 44px; height: 44px; border-radius: var(--radius-sm); border: 2px solid var(--border);
+    background: var(--bg); color: var(--text2); font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center;
+  }
+  .set-btn.done { background: var(--green); border-color: var(--green); color: #000; }
+  .rest-timer {
+    background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.2);
+    border-radius: var(--radius-sm); padding: 14px 20px; margin: 16px 0;
+    display: flex; align-items: center; gap: 14px; display: none;
+  }
+  .rest-timer.active { display: flex; }
+  .rest-time { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--gold); letter-spacing: 2px; }
+  .rest-label { font-size: 13px; color: var(--text2); }
+
+  /* ======== FREMGANG ======== */
+  .progress-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 24px; }
+  .prog-stat { text-align: center; }
+  .prog-stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--gold); }
+  .prog-stat-lbl { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; }
+
+  /* ======== CHECK-IN ======== */
+  .checkin-section { margin-bottom: 20px; }
+  .score-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .score-btn {
+    width: 44px; height: 44px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+    background: var(--bg); color: var(--text2); font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .score-btn.selected { background: var(--gold); border-color: var(--gold); color: #000; }
+  .form-select, .form-textarea {
+    width: 100%; padding: 13px 16px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text); font-size: 14px; font-family: inherit;
+    transition: border-color 0.2s; outline: none;
+  }
+  .form-select:focus, .form-textarea:focus { border-color: var(--gold); }
+  .form-textarea { resize: vertical; min-height: 90px; }
+  .btn-secondary {
+    padding: 12px 20px; background: transparent; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text2); font-size: 14px; font-weight: 500;
+    cursor: pointer; font-family: inherit; transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--text2); color: var(--text); }
+  .btn-gold {
+    padding: 14px 28px; background: var(--gold); color: #000; border: none;
+    border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; cursor: pointer;
+    font-family: inherit; transition: all 0.2s;
+  }
+  .btn-gold:hover { background: var(--gold2); }
+
+  /* ======== OPSTARTSSKEMA ======== */
+  .progress-bar-track { height: 4px; background: var(--border); border-radius: 2px; margin-bottom: 32px; }
+  .progress-bar-fill { height: 100%; background: var(--gold); border-radius: 2px; transition: width 0.3s; }
+  .step-section { display: none; }
+  .step-section.active { display: block; }
+  .chip-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .chip {
+    padding: 7px 14px; border: 1px solid var(--border); border-radius: 20px;
+    font-size: 13px; cursor: pointer; transition: all 0.15s; color: var(--text2);
+  }
+  .chip.selected { background: rgba(201,168,76,0.15); border-color: var(--gold); color: var(--gold); }
+  .step-nav { display: flex; gap: 12px; margin-top: 28px; }
+
+  /* ======== RESPONSIVE ======== */
+  @media (max-width: 768px) {
+    .sidebar { transform: translateX(-100%); }
+    .main { margin-left: 0; padding: 20px 16px 90px; max-width: 100vw; }
+    .bottom-nav { display: flex; }
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .progress-stats { grid-template-columns: 1fr 1fr; }
+    .welcome-banner h1 { font-size: 36px; }
+    .page-title { font-size: 32px; }
+  }
+  @media (max-width: 480px) {
+    .auth-box { margin: 16px; padding: 32px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">COACHING PORTAL</div>
+    <div class="auth-tagline">Dit personlige fitnessunivers</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('login')">Log ind</button>
+      <button class="auth-tab" onclick="switchTab('signup')">Opret konto</button>
+    </div>
+
+    <!-- Login -->
+    <div id="login-form">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" id="login-email" class="form-input" placeholder="din@email.dk">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Adgangskode</label>
+        <input type="password" id="login-password" class="form-input" placeholder="••••••••">
+      </div>
+      <button class="btn-primary" onclick="doLogin()">Log ind</button>
+    </div>
+
+    <!-- Signup -->
+    <div id="signup-form" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Fulde navn</label>
+        <input type="text" id="signup-name" class="form-input" placeholder="Dit navn">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" id="signup-email" class="form-input" placeholder="din@email.dk">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Adgangskode</label>
+        <input type="password" id="signup-password" class="form-input" placeholder="Min. 6 tegn">
+      </div>
+      <button class="btn-primary" onclick="doSignup()">Opret konto</button>
+    </div>
+
+    <div id="auth-error" class="auth-error"></div>
+  </div>
+</div>
+
+<!-- APP SCREEN -->
+<div id="app-screen">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-text">COACHING</div>
+      <div class="sidebar-logo-sub">Portal</div>
+    </div>
+    <div class="sidebar-nav" id="sidebar-nav"></div>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <span class="user-name" id="user-name-display">—</span>
+        <button class="btn-logout" onclick="doLogout()" title="Log ud">↩</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main class="main">
+    <div id="error-banner">⚠ <span id="error-text"></span></div>
+    
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="welcome-banner">
+        <div class="week-label" id="dash-week-label">Uge 1</div>
+        <h1 id="dash-greeting">Hej!</h1>
+        <p id="dash-program-label">Henter data…</p>
+      </div>
+
+      <div class="grid-3" style="margin-bottom:16px">
+        <div class="card" style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <div class="card-title">KALORIER</div>
+          <div class="macro-ring-wrapper">
+            <canvas id="chart-kcal"></canvas>
+            <div class="macro-ring-label" id="dash-kcal">— kcal</div>
+            <div class="macro-ring-sub">Dagligt mål</div>
+          </div>
+        </div>
+        <div class="card" style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <div class="card-title">PROTEIN</div>
+          <div class="macro-ring-wrapper">
+            <canvas id="chart-prot"></canvas>
+            <div class="macro-ring-label" id="dash-prot">— g</div>
+            <div class="macro-ring-sub">Dagligt mål</div>
+          </div>
+        </div>
+        <div class="card" style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <div class="card-title">KULHYDRAT</div>
+          <div class="macro-ring-wrapper">
+            <canvas id="chart-kh"></canvas>
+            <div class="macro-ring-label" id="dash-kh">— g</div>
+            <div class="macro-ring-sub">Dagligt mål</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-4" style="margin-bottom:16px">
+        <div class="card card-sm">
+          <div class="stat-label">Vægt</div>
+          <div class="stat-value" id="dash-weight">—</div>
+          <div class="stat-unit">kg</div>
+        </div>
+        <div class="card card-sm">
+          <div class="stat-label">Målvægt</div>
+          <div class="stat-value" id="dash-target">—</div>
+          <div class="stat-unit">kg</div>
+        </div>
+        <div class="card card-sm">
+          <div class="stat-label">Program</div>
+          <div class="stat-value" style="font-size:22px;word-break:break-word" id="dash-prog">—</div>
+        </div>
+        <div class="card card-sm">
+          <div class="stat-label">Uge</div>
+          <div class="stat-value" id="dash-uge">—</div>
+          <div class="stat-unit">af forløbet</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">UGENS STREAK</div>
+        <div class="streak-dots" id="streak-dots"></div>
+        <p style="color:var(--text2);font-size:13px;margin-top:12px" id="streak-desc">Ingen check-ins denne uge endnu</p>
+      </div>
+    </div>
+
+    <!-- KOSTPLAN -->
+    <div class="page" id="page-kostplan">
+      <div class="page-header">
+        <div class="page-title">KOSTPLAN</div>
+        <div class="page-sub">Din personlige ernæringsplan</div>
+      </div>
+      <div id="meals-container"></div>
+    </div>
+
+    <!-- TRÆNING -->
+    <div class="page" id="page-traening">
+      <div class="page-header">
+        <div class="page-title">TRÆNING</div>
+        <div class="page-sub" id="workout-day-label">Dagens program</div>
+      </div>
+      <div id="rest-timer" class="rest-timer">
+        <div>
+          <div class="rest-time" id="rest-time-display">1:30</div>
+          <div class="rest-label">Hvile tilbage</div>
+        </div>
+        <div style="flex:1">
+          <div style="height:4px;background:var(--border);border-radius:2px">
+            <div id="rest-bar" style="height:100%;background:var(--gold);border-radius:2px;transition:width 0.5s;width:100%"></div>
+          </div>
+        </div>
+        <button class="btn-secondary" onclick="stopRestTimer()">Spring over</button>
+      </div>
+      <div id="exercises-container"></div>
+    </div>
+
+    <!-- FREMGANG -->
+    <div class="page" id="page-fremgang">
+      <div class="page-header">
+        <div class="page-title">FREMGANG</div>
+        <div class="page-sub">Din udvikling over tid</div>
+      </div>
+      <div class="progress-stats">
+        <div class="prog-stat">
+          <div class="prog-stat-val" id="prog-start">—</div>
+          <div class="prog-stat-lbl">Startvægt</div>
+        </div>
+        <div class="prog-stat">
+          <div class="prog-stat-val" id="prog-current">—</div>
+          <div class="prog-stat-lbl">Nuværende</div>
+        </div>
+        <div class="prog-stat">
+          <div class="prog-stat-val" id="prog-target">—</div>
+          <div class="prog-stat-lbl">Målvægt</div>
+        </div>
+        <div class="prog-stat">
+          <div class="prog-stat-val" id="prog-change">—</div>
+          <div class="prog-stat-lbl">Ændring</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">VÆGTKURVE</div>
+        <canvas id="chart-weight" height="220"></canvas>
+        <p id="weight-empty" style="color:var(--text3);font-size:13px;text-align:center;margin-top:20px;display:none">Ingen data endnu — indsend check-ins for at se din kurve.</p>
+      </div>
+    </div>
+
+    <!-- CHECK-IN -->
+    <div class="page" id="page-checkin">
+      <div class="page-header">
+        <div class="page-title">UGENTLIG CHECK-IN</div>
+        <div class="page-sub">Rapporter din uge til din coach</div>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="checkin-section">
+          <label class="form-label">Morgenvægt (kg)</label>
+          <input type="number" step="0.1" id="ci-weight" class="form-input" placeholder="f.eks. 82.5">
+        </div>
+        <div class="checkin-section">
+          <label class="form-label">Fulgt træningsprogram?</label>
+          <select id="ci-training" class="form-select">
+            <option value="">Vælg…</option>
+            <option value="Ja, 100%">Ja, 100%</option>
+            <option value="Ja, næsten">Ja, næsten</option>
+            <option value="Delvist">Delvist</option>
+            <option value="Nej">Nej</option>
+          </select>
+        </div>
+        <div class="checkin-section">
+          <label class="form-label">Fulgt kostplan?</label>
+          <select id="ci-meal" class="form-select">
+            <option value="">Vælg…</option>
+            <option value="Ja, 100%">Ja, 100%</option>
+            <option value="Ja, næsten">Ja, næsten</option>
+            <option value="Delvist">Delvist</option>
+            <option value="Nej">Nej</option>
+          </select>
+        </div>
+        <div class="checkin-section">
+          <label class="form-label">Velvære og generel følelse denne uge</label>
+          <textarea id="ci-wellbeing" class="form-textarea" placeholder="Beskriv din uge, energiniveau, søvn osv…"></textarea>
+        </div>
+        <div class="checkin-section">
+          <label class="form-label">Overordnet score 1-10</label>
+          <div class="score-btns" id="score-btns"></div>
+        </div>
+        <div class="checkin-section">
+          <label class="form-label">Progression / noter til coach</label>
+          <textarea id="ci-notes" class="form-textarea" placeholder="Løfteprogression, hvad du vil justere m.m."></textarea>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <button class="btn-gold" onclick="submitCheckin()">Indsend check-in ✓</button>
+        <button class="btn-secondary" onclick="resetCheckin()">Nulstil</button>
+        <span id="ci-loading" style="display:none"><span class="spinner"></span></span>
+      </div>
+      <div id="ci-success" style="display:none;margin-top:16px;background:rgba(62,207,142,0.1);border:1px solid rgba(62,207,142,0.3);border-radius:var(--radius-sm);padding:14px 16px;color:var(--green);font-size:14px">
+        ✓ Check-in indsendt! Din coach modtager det snarest.
+      </div>
+    </div>
+
+    <!-- OPSTARTSSKEMA -->
+    <div class="page" id="page-opstart">
+      <div class="page-header">
+        <div class="page-title">OPSTARTSSKEMA</div>
+        <div class="page-sub">Hjælp os at skræddersy dit program</div>
+      </div>
+      <div id="intake-confirmed" style="display:none" class="card">
+        <div style="text-align:center;padding:24px 0">
+          <div style="font-size:48px;margin-bottom:16px">✅</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;margin-bottom:8px">SKEMA INDSENDT</div>
+          <p style="color:var(--text2)">Din coach har modtaget dine oplysninger og er i gang med at lave dit program.</p>
+        </div>
+      </div>
+      <div id="intake-form-wrapper">
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="intake-progress" style="width:25%"></div>
+        </div>
+        <div id="intake-step-label" style="font-size:12px;color:var(--text2);margin-bottom:20px;text-transform:uppercase;letter-spacing:1px">Trin 1 af 4</div>
+
+        <!-- Trin 1: Personligt -->
+        <div class="step-section active card" id="intake-step-1">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;margin-bottom:20px">PERSONLIGE OPLYSNINGER</div>
+          <div class="form-group"><label class="form-label">Fulde navn</label><input type="text" id="in-name" class="form-input"></div>
+          <div class="grid-2">
+            <div class="form-group"><label class="form-label">Alder</label><input type="number" id="in-age" class="form-input" placeholder="år"></div>
+            <div class="form-group">
+              <label class="form-label">Køn</label>
+              <select id="in-gender" class="form-select"><option value="">Vælg…</option><option>Mand</option><option>Kvinde</option><option>Andet</option></select>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="form-group"><label class="form-label">Højde (cm)</label><input type="number" id="in-height" class="form-input" placeholder="cm"></div>
+            <div class="form-group"><label class="form-label">Nuværende vægt (kg)</label><input type="number" step="0.1" id="in-weight" class="form-input" placeholder="kg"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Erhverv / arbejdssituation</label><input type="text" id="in-occ" class="form-input" placeholder="Stillesiddende / fysisk arbejde osv."></div>
+          <div class="form-group"><label class="form-label">Allergier / intoleranser</label>
+            <div class="chip-group" id="allergy-chips"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Skader / begrænsninger</label><input type="text" id="in-injuries" class="form-input" placeholder="Knæ, ryg, skulder osv."></div>
+          <div class="step-nav">
+            <button class="btn-gold" onclick="intakeNext(1)">Næste →</button>
+          </div>
+        </div>
+
+        <!-- Trin 2: Træning -->
+        <div class="step-section card" id="intake-step-2">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;margin-bottom:20px">TRÆNINGSTILSTAND</div>
+          <div class="form-group"><label class="form-label">Typisk kost i dag</label><textarea id="in-diet" class="form-textarea" placeholder="Beskriv hvad du typisk spiser…"></textarea></div>
+          <div class="form-group"><label class="form-label">Aktivitetsniveau</label>
+            <div class="chip-group" id="activity-chips"></div>
+          </div>
+          <div class="grid-2">
+            <div class="form-group"><label class="form-label">År med styrketræning</label><input type="number" id="in-years" class="form-input" placeholder="0 = begynder"></div>
+            <div class="form-group"><label class="form-label">Sessionslængde</label>
+              <select id="in-duration" class="form-select"><option value="">Vælg…</option><option>30-45 min</option><option>45-60 min</option><option>60-90 min</option><option>90+ min</option></select>
+            </div>
+          </div>
+          <div class="form-group"><label class="form-label">Nuværende/seneste program</label><input type="text" id="in-program" class="form-input" placeholder="PPL, 5/3/1, eget osv."></div>
+          <div class="form-group"><label class="form-label">Bedste løft (bænk/squat/dødløft)</label><input type="text" id="in-lifts" class="form-input" placeholder="Bænk 80kg / Squat 100kg / Dødløft 120kg"></div>
+          <div class="step-nav">
+            <button class="btn-secondary" onclick="intakePrev(2)">← Tilbage</button>
+            <button class="btn-gold" onclick="intakeNext(2)">Næste →</button>
+          </div>
+        </div>
+
+        <!-- Trin 3: Mål -->
+        <div class="step-section card" id="intake-step-3">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;margin-bottom:20px">DINE MÅL</div>
+          <div class="form-group"><label class="form-label">Primært mål</label>
+            <div class="chip-group" id="goal-chips"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Målvægt (kg)</label><input type="number" step="0.1" id="in-target" class="form-input"></div>
+          <div class="form-group"><label class="form-label">Kortsigtede mål (3 mdr.)</label><textarea id="in-short" class="form-textarea" placeholder="Hvad vil du have opnået om 3 måneder?"></textarea></div>
+          <div class="form-group"><label class="form-label">Hvorfor er det vigtigt for dig?</label><textarea id="in-why" class="form-textarea" placeholder="Din dybere motivation…"></textarea></div>
+          <div class="step-nav">
+            <button class="btn-secondary" onclick="intakePrev(3)">← Tilbage</button>
+            <button class="btn-gold" onclick="intakeNext(3)">Næste →</button>
+          </div>
+        </div>
+
+        <!-- Trin 4: Bekræft -->
+        <div class="step-section card" id="intake-step-4">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;margin-bottom:20px">FORHINDRINGER & AFSENDELSE</div>
+          <div class="form-group"><label class="form-label">Hvad er dine største forhindringer?</label><textarea id="in-obstacles" class="form-textarea" placeholder="Tid, motivation, viden, miljø osv."></textarea></div>
+          <div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;margin-bottom:20px">
+            <p style="color:var(--text2);font-size:13px;line-height:1.7">
+              Ved at indsende dette skema giver du din coach alle nødvendige oplysninger til at skræddersy dit trænings- og kostprogram. Du vil modtage dit program inden for 24-48 timer.
+            </p>
+          </div>
+          <div class="step-nav">
+            <button class="btn-secondary" onclick="intakePrev(4)">← Tilbage</button>
+            <button class="btn-gold" onclick="submitIntake()" id="intake-submit-btn">Indsend skema ✓</button>
+            <span id="intake-loading" style="display:none"><span class="spinner"></span></span>
+          </div>
+          <div id="intake-error" style="display:none;margin-top:12px;color:var(--red);font-size:13px"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Bottom nav mobile -->
+  <nav class="bottom-nav" id="bottom-nav"></nav>
+</div>
+
+<!-- Toast -->
+<div id="toast">✓ <span id="toast-text">Gemt!</span></div>
+
+<script>
+// =====================================================
+// SUPABASE INIT — GLOBAL FØRSTE LINJE
+// =====================================================
+const sb = supabase.createClient(
+  'https://rtcayuwapitueckgprzc.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0Y2F5dXdhcGl0dWVja2dwcnpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NzA2MzAsImV4cCI6MjA5MzA0NjYzMH0.uwMOD1w3uvQFGLCTpB8kkGPxM1z1pRvzF2VEANr3VME'
+);
+
+let currentUser = null;
+let isLoading = false;
+let clientData = null;
+let checkins = [];
+
+// Chart instances
+let chartKcal = null;
+let chartProt = null;
+let chartKh = null;
+let chartWeight = null;
+
+// =====================================================
+// NAV CONFIG
+// =====================================================
+const NAV_ITEMS = [
+  { id: 'dashboard', icon: '◼', label: 'Dashboard' },
+  { id: 'kostplan',  icon: '🥗', label: 'Kostplan' },
+  { id: 'traening',  icon: '💪', label: 'Træning' },
+  { id: 'fremgang',  icon: '📈', label: 'Fremgang' },
+  { id: 'checkin',   icon: '✏️', label: 'Check-in' },
+  { id: 'opstart',   icon: '📋', label: 'Opstart' },
+];
+
+function buildNav() {
+  const sidebar = document.getElementById('sidebar-nav');
+  const bottom = document.getElementById('bottom-nav');
+  sidebar.innerHTML = '';
+  bottom.innerHTML = '';
+
+  NAV_ITEMS.forEach(item => {
+    const sEl = document.createElement('div');
+    sEl.className = 'nav-item' + (item.id === 'dashboard' ? ' active' : '');
+    sEl.dataset.page = item.id;
+    sEl.innerHTML = `<span class="nav-icon">${item.icon}</span><span>${item.label}</span>`;
+    sEl.addEventListener('click', () => showPage(item.id));
+    sidebar.appendChild(sEl);
+
+    const bEl = document.createElement('button');
+    bEl.className = 'bottom-nav-item' + (item.id === 'dashboard' ? ' active' : '');
+    bEl.dataset.page = item.id;
+    bEl.innerHTML = `<span class="nav-icon">${item.icon}</span><span>${item.label}</span>`;
+    bEl.addEventListener('click', () => showPage(item.id));
+    bottom.appendChild(bEl);
+  });
+}
+
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(n => n.classList.remove('active'));
+  const page = document.getElementById('page-' + pageId);
+  if (page) page.classList.add('active');
+  document.querySelectorAll('[data-page="' + pageId + '"]').forEach(n => n.classList.add('active'));
+
+  if (pageId === 'fremgang') renderWeightChart();
+}
+
+// =====================================================
+// AUTH STATE
+// =====================================================
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (session?.user) {
+    currentUser = session.user;
+    showApp();
+    if (!isLoading) await loadData();
+  } else {
+    currentUser = null;
+    isLoading = false;
+    showAuth();
+  }
+});
+
+function showAuth() {
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app-screen').classList.remove('visible');
+}
+
+function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-screen').classList.add('visible');
+  buildNav();
+  buildScoreBtns();
+  buildIntakeChips();
+}
+
+// =====================================================
+// LOAD DATA
+// =====================================================
+async function loadData() {
+  if (isLoading) return;
+  isLoading = true;
+  try {
+    const [cdRes, ciRes, inRes] = await Promise.all([
+      sb.from('client_data').select('*').eq('user_id', currentUser.id).maybeSingle(),
+      sb.from('checkins').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(12),
+      sb.from('intake_forms').select('id').eq('user_id', currentUser.id).maybeSingle()
+    ]);
+
+    clientData = cdRes.data || null;
+    checkins = ciRes.data || [];
+
+    // Hent brugernavn fra profiles
+    const { data: profile } = await sb.from('profiles').select('full_name').eq('id', currentUser.id).maybeSingle();
+    const name = profile?.full_name || currentUser.email?.split('@')[0] || 'Bruger';
+
+    renderUserHeader(name);
+    renderDashboard(name, clientData, checkins);
+    renderMeals(clientData);
+    renderWorkout(clientData);
+    renderProgressStats(clientData, checkins);
+    renderIntakeStatus(!!inRes.data);
+  } catch (err) {
+    showErrorInUI(err.message);
+  } finally {
+    isLoading = false;
+  }
+}
+
+// =====================================================
+// UI HELPERS
+// =====================================================
+function showErrorInUI(msg) {
+  const banner = document.getElementById('error-banner');
+  document.getElementById('error-text').textContent = msg;
+  banner.classList.add('show');
+  setTimeout(() => banner.classList.remove('show'), 6000);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-text').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function renderUserHeader(name) {
+  const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  document.getElementById('user-avatar').textContent = initials;
+  document.getElementById('user-name-display').textContent = name;
+}
+
+// =====================================================
+// AUTH ACTIONS
+// =====================================================
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((el, i) => {
+    el.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'signup'));
+  });
+  document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('signup-form').style.display = tab === 'signup' ? 'block' : 'none';
+  document.getElementById('auth-error').classList.remove('show');
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function translateAuthError(msg) {
+  if (msg.includes('Invalid login credentials')) return 'Forkert email eller adgangskode.';
+  if (msg.includes('Email not confirmed')) return 'Email er ikke bekræftet.';
+  if (msg.includes('User already registered')) return 'Denne email er allerede registreret.';
+  if (msg.includes('Password should be')) return 'Adgangskoden skal mindst være 6 tegn.';
+  if (msg.includes('Unable to validate')) return 'Ugyldig email eller adgangskode.';
+  if (msg.includes('rate limit')) return 'For mange forsøg. Prøv igen om lidt.';
+  return msg;
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) return showAuthError('Udfyld email og adgangskode.');
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) showAuthError(translateAuthError(error.message));
+}
+
+async function doSignup() {
+  const name = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  if (!name || !email || !password) return showAuthError('Udfyld alle felter.');
+  if (password.length < 6) return showAuthError('Adgangskoden skal mindst være 6 tegn.');
+
+  const { data, error } = await sb.auth.signUp({ email, password, options: { data: { full_name: name } } });
+  if (error) return showAuthError(translateAuthError(error.message));
+
+  if (data?.user) {
+    await sb.from('profiles').upsert({ id: data.user.id, email, full_name: name }, { onConflict: 'id' });
+  }
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+}
+
+// =====================================================
+// DASHBOARD
+// =====================================================
+function renderDashboard(name, cd, cis) {
+  const week = cd?.week || 1;
+  document.getElementById('dash-week-label').textContent = 'Uge ' + week;
+  document.getElementById('dash-greeting').textContent = 'Hej, ' + name.split(' ')[0] + '!';
+  document.getElementById('dash-program-label').textContent = cd?.program ? `Program: ${cd.program}` : 'Afventer program fra din coach';
+  document.getElementById('dash-weight').textContent = cd?.current_weight || '—';
+  document.getElementById('dash-target').textContent = cd?.target_weight || '—';
+  document.getElementById('dash-prog').textContent = cd?.program || '—';
+  document.getElementById('dash-uge').textContent = cd?.week || '—';
+  document.getElementById('dash-kcal').textContent = (cd?.kcal_goal || 0) + ' kcal';
+  document.getElementById('dash-prot').textContent = (cd?.prot_goal || 0) + ' g';
+  document.getElementById('dash-kh').textContent = (cd?.kh_goal || 0) + ' g';
+
+  buildMacroChart('chart-kcal', chartKcal, cd?.kcal_goal || 0, 3000, '#c9a84c', v => { chartKcal = v; });
+  buildMacroChart('chart-prot', chartProt, cd?.prot_goal || 0, 250, '#3ecf8e', v => { chartProt = v; });
+  buildMacroChart('chart-kh', chartKh, cd?.kh_goal || 0, 350, '#4d8bf0', v => { chartKh = v; });
+
+  // Streak: check-ins denne uge
+  const days = ['M', 'T', 'O', 'T', 'F', 'L', 'S'];
+  const today = new Date().getDay(); // 0=sun
+  const todayIdx = today === 0 ? 6 : today - 1;
+  const thisWeekStart = new Date();
+  thisWeekStart.setDate(thisWeekStart.getDate() - todayIdx);
+  thisWeekStart.setHours(0, 0, 0, 0);
+
+  const weekCheckins = cis.filter(c => new Date(c.created_at) >= thisWeekStart);
+  const dotsEl = document.getElementById('streak-dots');
+  dotsEl.innerHTML = '';
+  days.forEach((d, i) => {
+    const div = document.createElement('div');
+    div.className = 'streak-dot' + (i < weekCheckins.length ? ' done' : '') + (i === todayIdx ? ' today' : '');
+    div.textContent = i < weekCheckins.length ? '✓' : d;
+    dotsEl.appendChild(div);
+  });
+  document.getElementById('streak-desc').textContent =
+    weekCheckins.length > 0
+      ? `${weekCheckins.length} check-in${weekCheckins.length > 1 ? 's' : ''} denne uge — godt arbejde! 🔥`
+      : 'Ingen check-ins denne uge endnu';
+}
+
+function buildMacroChart(canvasId, existingChart, value, max, color, setter) {
+  if (existingChart) { existingChart.destroy(); }
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  const chart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: [Math.min(value, max), Math.max(0, max - Math.min(value, max))],
+        backgroundColor: [color, '#222222'],
+        borderWidth: 0,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      cutout: '75%',
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      animation: { animateRotate: true, duration: 800 }
+    }
+  });
+  setter(chart);
+}
+
+// =====================================================
+// KOSTPLAN
+// =====================================================
+const DEMO_MEALS = [
+  { name: 'Morgenmad', kcal: 520, items: [
+    { name: 'Havregryn', gram: 80, kcal: 300 },
+    { name: 'Skyr', gram: 150, kcal: 110 },
+    { name: 'Bær (frosne)', gram: 100, kcal: 40 },
+    { name: 'Mandler', gram: 15, kcal: 90 },
+  ]},
+  { name: 'Pre-workout', kcal: 350, items: [
+    { name: 'Rugbrød', gram: 80, kcal: 180 },
+    { name: 'Æg (kogt)', gram: 120, kcal: 150 },
+    { name: 'Agurk', gram: 100, kcal: 15 },
+  ]},
+  { name: 'Post-workout', kcal: 480, items: [
+    { name: 'Proteinshake (valle)', gram: 40, kcal: 150 },
+    { name: 'Banan', gram: 120, kcal: 100 },
+    { name: 'Mælk 0,5%', gram: 200, kcal: 70 },
+    { name: 'Quinoa', gram: 60, kcal: 160 },
+  ]},
+  { name: 'Frokost', kcal: 620, items: [
+    { name: 'Kyllingefilet', gram: 200, kcal: 220 },
+    { name: 'Brune ris (kogt)', gram: 200, kcal: 260 },
+    { name: 'Blandede grøntsager', gram: 150, kcal: 60 },
+    { name: 'Olivenolie', gram: 8, kcal: 70 },
+  ]},
+  { name: 'Aftensmad', kcal: 680, items: [
+    { name: 'Laks', gram: 180, kcal: 360 },
+    { name: 'Søde kartofler', gram: 200, kcal: 180 },
+    { name: 'Broccoli', gram: 150, kcal: 50 },
+    { name: 'Citron & krydderurter', gram: 10, kcal: 5 },
+  ]},
+  { name: 'Snack', kcal: 250, items: [
+    { name: 'Hytteost', gram: 150, kcal: 120 },
+    { name: 'Valnødder', gram: 20, kcal: 130 },
+  ]},
+];
+
+function renderMeals(cd) {
+  const container = document.getElementById('meals-container');
+  container.innerHTML = '';
+  const meals = DEMO_MEALS; // In a full implementation, merge with cd.meal_plan data
+  meals.forEach((meal, idx) => {
+    const div = document.createElement('div');
+    div.className = 'meal-card';
+    div.innerHTML = `
+      <div class="meal-header" onclick="toggleMeal(this)">
+        <div>
+          <div class="meal-title">${meal.name}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span class="meal-kcal">${meal.kcal} kcal</span>
+          <span class="meal-chevron">▼</span>
+        </div>
+      </div>
+      <div class="meal-body ${idx === 0 ? 'open' : ''}">
+        ${meal.items.map(item => `
+          <div class="ingredient-row">
+            <span class="ingredient-name">${item.name}</span>
+            <span class="ingredient-meta">${item.gram}g &nbsp;·&nbsp; ${item.kcal} kcal</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function toggleMeal(header) {
+  const body = header.nextElementSibling;
+  const chevron = header.querySelector('.meal-chevron');
+  body.classList.toggle('open');
+  chevron.style.transform = body.classList.contains('open') ? 'rotate(180deg)' : '';
+}
+
+// =====================================================
+// TRÆNING
+// =====================================================
+const DEMO_WORKOUT = {
+  day: 'Dag A — Bryst & Triceps',
+  exercises: [
+    { name: 'Bænkpres', sets: 4, reps: '8-10', note: 'Langsomt ned — 3 sek excentrisk' },
+    { name: 'Incline DB Press', sets: 3, reps: '10-12', note: 'Fuld bevægeudslag' },
+    { name: 'Kabel Flyes', sets: 3, reps: '12-15', note: 'Klem i toppen 1 sek' },
+    { name: 'Triceps Pushdown', sets: 3, reps: '12-15', note: 'Albuer fikseret ved siden' },
+    { name: 'Overhead Extension', sets: 3, reps: '10-12', note: 'Stræk hele vejen' },
+  ]
+};
+
+let restInterval = null;
+let restSeconds = 90;
+
+function renderWorkout(cd) {
+  document.getElementById('workout-day-label').textContent = cd?.program ? cd.program + ' — ' + DEMO_WORKOUT.day : DEMO_WORKOUT.day;
+  const container = document.getElementById('exercises-container');
+  container.innerHTML = '';
+  DEMO_WORKOUT.exercises.forEach((ex, eIdx) => {
+    const div = document.createElement('div');
+    div.className = 'exercise-card';
+    const sets = Array.from({ length: ex.sets }, (_, i) => `<button class="set-btn" onclick="toggleSet(this, ${eIdx})" data-set="${i + 1}">${i + 1}</button>`).join('');
+    div.innerHTML = `
+      <div class="exercise-name">${ex.name}</div>
+      <div class="exercise-meta">${ex.sets} sæt × ${ex.reps} reps &nbsp;·&nbsp; ${ex.note}</div>
+      <div class="sets-row">${sets}</div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function toggleSet(btn, exIdx) {
+  btn.classList.toggle('done');
+  if (btn.classList.contains('done')) {
+    startRestTimer();
+  }
+}
+
+function startRestTimer() {
+  if (restInterval) clearInterval(restInterval);
+  restSeconds = 90;
+  const timer = document.getElementById('rest-timer');
+  timer.classList.add('active');
+  updateRestDisplay();
+  restInterval = setInterval(() => {
+    restSeconds--;
+    updateRestDisplay();
+    if (restSeconds <= 0) stopRestTimer();
+  }, 1000);
+}
+
+function updateRestDisplay() {
+  const m = Math.floor(restSeconds / 60);
+  const s = restSeconds % 60;
+  document.getElementById('rest-time-display').textContent = m + ':' + String(s).padStart(2, '0');
+  document.getElementById('rest-bar').style.width = (restSeconds / 90 * 100) + '%';
+}
+
+function stopRestTimer() {
+  if (restInterval) clearInterval(restInterval);
+  restInterval = null;
+  document.getElementById('rest-timer').classList.remove('active');
+}
+
+// =====================================================
+// FREMGANG
+// =====================================================
+function renderProgressStats(cd, cis) {
+  document.getElementById('prog-start').textContent = cd?.start_weight || '—';
+  document.getElementById('prog-current').textContent = cd?.current_weight || '—';
+  document.getElementById('prog-target').textContent = cd?.target_weight || '—';
+  if (cd?.start_weight && cd?.current_weight) {
+    const diff = (parseFloat(cd.current_weight) - parseFloat(cd.start_weight)).toFixed(1);
+    const el = document.getElementById('prog-change');
+    el.textContent = (diff > 0 ? '+' : '') + diff;
+    el.style.color = diff <= 0 ? 'var(--green)' : 'var(--red)';
+  }
+}
+
+function renderWeightChart() {
+  if (chartWeight) { chartWeight.destroy(); chartWeight = null; }
+  const data = checkins.slice().reverse().filter(c => c.weight);
+  const emptyEl = document.getElementById('weight-empty');
+  if (data.length === 0) {
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  const labels = data.map(c => {
+    const d = new Date(c.created_at);
+    return d.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
+  });
+  const weights = data.map(c => c.weight);
+  const ctx = document.getElementById('chart-weight').getContext('2d');
+  chartWeight = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: weights,
+        borderColor: '#c9a84c',
+        backgroundColor: 'rgba(201,168,76,0.08)',
+        borderWidth: 2,
+        pointBackgroundColor: '#c9a84c',
+        pointRadius: 5,
+        tension: 0.4,
+        fill: true
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: '#1a1a1a' }, ticks: { color: '#666' } },
+        y: { grid: { color: '#1a1a1a' }, ticks: { color: '#666' } }
+      },
+      responsive: true,
+      interaction: { intersect: false, mode: 'index' }
+    }
+  });
+}
+
+// =====================================================
+// CHECK-IN
+// =====================================================
+let selectedScore = null;
+
+function buildScoreBtns() {
+  const container = document.getElementById('score-btns');
+  container.innerHTML = '';
+  for (let i = 1; i <= 10; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'score-btn';
+    btn.textContent = i;
+    btn.dataset.score = i;
+    btn.addEventListener('click', () => {
+      selectedScore = i;
+      document.querySelectorAll('.score-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    });
+    container.appendChild(btn);
+  }
+}
+
+async function submitCheckin() {
+  const weight = document.getElementById('ci-weight').value;
+  const training = document.getElementById('ci-training').value;
+  const meal = document.getElementById('ci-meal').value;
+  const wellbeing = document.getElementById('ci-wellbeing').value;
+  const notes = document.getElementById('ci-notes').value;
+
+  if (!weight) return showErrorInUI('Angiv din morgenvægt for at indsende check-in.');
+
+  document.getElementById('ci-loading').style.display = 'inline';
+  document.getElementById('ci-success').style.display = 'none';
+
+  try {
+    const week = clientData?.week || 1;
+    const { error: ciErr } = await sb.from('checkins').insert({
+      user_id: currentUser.id,
+      week,
+      weight: parseFloat(weight),
+      training_done: training,
+      meal_plan: meal,
+      wellbeing,
+      score: selectedScore,
+      adjustments: notes,
+      created_at: new Date().toISOString()
+    });
+    if (ciErr) throw new Error(ciErr.message);
+
+    // Opdater current_weight
+    const { error: cdErr } = await sb.from('client_data').upsert({
+      user_id: currentUser.id,
+      current_weight: parseFloat(weight)
+    }, { onConflict: 'user_id' });
+    if (cdErr) throw new Error(cdErr.message);
+
+    document.getElementById('ci-success').style.display = 'block';
+    showToast('Check-in indsendt!');
+    await loadData();
+  } catch (err) {
+    showErrorInUI(err.message);
+  } finally {
+    document.getElementById('ci-loading').style.display = 'none';
+  }
+}
+
+function resetCheckin() {
+  document.getElementById('ci-weight').value = '';
+  document.getElementById('ci-training').value = '';
+  document.getElementById('ci-meal').value = '';
+  document.getElementById('ci-wellbeing').value = '';
+  document.getElementById('ci-notes').value = '';
+  selectedScore = null;
+  document.querySelectorAll('.score-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('ci-success').style.display = 'none';
+}
+
+// =====================================================
+// OPSTARTSSKEMA
+// =====================================================
+const ALLERGY_OPTIONS = ['Gluten', 'Laktose', 'Nødder', 'Æg', 'Skaldyr', 'Soja', 'Ingen'];
+const ACTIVITY_OPTIONS = ['Stillesiddende', 'Let aktiv', 'Moderat aktiv', 'Meget aktiv', 'Ekstremt aktiv'];
+const GOAL_OPTIONS = ['Tabe fedt', 'Bygge muskler', 'Rekomposition', 'Performance', 'Generel sundhed'];
+
+let intakeStep = 1;
+const selectedAllergies = new Set();
+const selectedActivity = new Set();
+const selectedGoal = new Set();
+
+function buildIntakeChips() {
+  buildChips('allergy-chips', ALLERGY_OPTIONS, selectedAllergies);
+  buildChips('activity-chips', ACTIVITY_OPTIONS, selectedActivity, true);
+  buildChips('goal-chips', GOAL_OPTIONS, selectedGoal, true);
+}
+
+function buildChips(containerId, options, store, single = false) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  options.forEach(opt => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (store.has(opt) ? ' selected' : '');
+    chip.textContent = opt;
+    chip.addEventListener('click', () => {
+      if (single) store.clear();
+      store.has(opt) ? store.delete(opt) : store.add(opt);
+      buildChips(containerId, options, store, single);
+    });
+    container.appendChild(chip);
+  });
+}
+
+function setIntakeStep(step) {
+  document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById('intake-step-' + step);
+  if (target) target.classList.add('active');
+  document.getElementById('intake-progress').style.width = (step * 25) + '%';
+  document.getElementById('intake-step-label').textContent = 'Trin ' + step + ' af 4';
+  intakeStep = step;
+}
+
+function intakeNext(currentStep) {
+  if (currentStep < 4) setIntakeStep(currentStep + 1);
+}
+
+function intakePrev(currentStep) {
+  if (currentStep > 1) setIntakeStep(currentStep - 1);
+}
+
+function renderIntakeStatus(hasIntake) {
+  if (hasIntake) {
+    document.getElementById('intake-confirmed').style.display = 'block';
+    document.getElementById('intake-form-wrapper').style.display = 'none';
+  } else {
+    document.getElementById('intake-confirmed').style.display = 'none';
+    document.getElementById('intake-form-wrapper').style.display = 'block';
+  }
+}
+
+async function submitIntake() {
+  const btn = document.getElementById('intake-submit-btn');
+  const loading = document.getElementById('intake-loading');
+  const errorEl = document.getElementById('intake-error');
+  btn.disabled = true;
+  loading.style.display = 'inline';
+  errorEl.style.display = 'none';
+
+  try {
+    const payload = {
+      user_id: currentUser.id,
+      full_name: document.getElementById('in-name').value.trim(),
+      age: parseInt(document.getElementById('in-age').value) || null,
+      gender: document.getElementById('in-gender').value,
+      height: parseFloat(document.getElementById('in-height').value) || null,
+      weight: parseFloat(document.getElementById('in-weight').value) || null,
+      occupation: document.getElementById('in-occ').value.trim(),
+      allergies: Array.from(selectedAllergies).join(', '),
+      injuries: document.getElementById('in-injuries').value.trim(),
+      typical_diet: document.getElementById('in-diet').value.trim(),
+      activity_level: Array.from(selectedActivity).join(', '),
+      years_training: parseInt(document.getElementById('in-years').value) || 0,
+      session_duration: document.getElementById('in-duration').value,
+      current_program: document.getElementById('in-program').value.trim(),
+      best_lifts: document.getElementById('in-lifts').value.trim(),
+      primary_goal: Array.from(selectedGoal).join(', '),
+      target_weight: parseFloat(document.getElementById('in-target').value) || null,
+      short_term_goals: document.getElementById('in-short').value.trim(),
+      why: document.getElementById('in-why').value.trim(),
+      obstacles: document.getElementById('in-obstacles').value.trim()
+    };
+
+    const { error: inErr } = await sb.from('intake_forms').upsert(payload, { onConflict: 'user_id' });
+    if (inErr) throw new Error(inErr.message);
+
+    // Opret client_data med startvægt
+    if (payload.weight) {
+      await sb.from('client_data').upsert({
+        user_id: currentUser.id,
+        start_weight: payload.weight,
+        current_weight: payload.weight,
+        target_weight: payload.target_weight,
+        week: 1
+      }, { onConflict: 'user_id' });
+    }
+
+    showToast('Opstartsskema indsendt!');
+    renderIntakeStatus(true);
+    await loadData();
+  } catch (err) {
+    errorEl.textContent = 'Fejl: ' + err.message;
+    errorEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    loading.style.display = 'none';
+  }
+}
+</script>
+</body>
+</html>
