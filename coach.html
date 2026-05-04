@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GP Coach Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080808;--surf:#111;--surf2:#1a1a1a;--surf3:#222;--surf4:#2a2a2a;
+  --gold:#c9a84c;--gold-l:#e8cc7a;--gold-d:#8a6f2e;--gold-xs:rgba(201,168,76,.08);
+  --txt:#f0f0f0;--muted:#888;--dim:#444;
+  --bdr:rgba(255,255,255,.07);--bdr-g:rgba(201,168,76,.2);
+  --green:#4caf7d;--red:#e05252;--blue:#5b8dee;
+  --r:10px;--r2:16px;--trans:.2s ease;
+}
+body{background:var(--bg);color:var(--txt);font-family:'Segoe UI',system-ui,sans-serif;font-size:15px;line-height:1.6;min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--surf)}::-webkit-scrollbar-thumb{background:var(--gold-d);border-radius:3px}
+.hidden{display:none!important}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 18px;border:none;border-radius:var(--r);font-size:.88rem;font-weight:600;cursor:pointer;transition:all var(--trans);font-family:inherit;white-space:nowrap}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-l));color:#000}
+.btn-gold:not(:disabled):hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 4px 16px rgba(201,168,76,.3)}
+.btn-outline{background:transparent;border:1px solid var(--bdr);color:var(--txt)}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+.btn-ghost{background:transparent;border:none;color:var(--muted)}
+.btn-ghost:hover{color:var(--txt)}
+.btn-danger{background:rgba(224,82,82,.15);border:1px solid rgba(224,82,82,.3);color:var(--red)}
+.btn-danger:hover{background:rgba(224,82,82,.25)}
+.btn-success{background:rgba(76,175,125,.15);border:1px solid rgba(76,175,125,.3);color:var(--green)}
+.btn-success:hover{background:rgba(76,175,125,.25)}
+.btn-sm{padding:6px 13px;font-size:.8rem}
+.btn-lg{padding:13px 26px;font-size:.95rem}
+.btn-full{width:100%}
+.input{width:100%;background:var(--surf2);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 14px;color:var(--txt);font-size:.88rem;outline:none;transition:border-color var(--trans);font-family:inherit}
+.input:focus{border-color:var(--gold)}
+.input::placeholder{color:var(--dim)}
+select.input{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.label{display:block;font-size:.75rem;color:var(--muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.form-group{margin-bottom:14px}
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:20px}
+.card-g{border-color:var(--bdr-g)}
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:3px 11px;font-size:.75rem;font-weight:600}
+.badge-pending{background:rgba(91,141,238,.12);border:1px solid rgba(91,141,238,.3);color:var(--blue)}
+.badge-active{background:rgba(76,175,125,.12);border:1px solid rgba(76,175,125,.3);color:var(--green)}
+.badge-gold{background:rgba(201,168,76,.12);border:1px solid var(--bdr-g);color:var(--gold)}
+/* ── AUTH ── */
+#auth-page{display:flex;align-items:center;justify-content:center;min-height:100vh;background:radial-gradient(ellipse at 50% 25%,rgba(201,168,76,.07) 0%,transparent 65%)}
+.auth-card{background:var(--surf);border:1px solid var(--bdr-g);border-radius:22px;padding:48px 40px;width:100%;max-width:420px;box-shadow:0 24px 80px rgba(0,0,0,.6)}
+.auth-logo{text-align:center;margin-bottom:36px}
+.auth-logo .mark{width:64px;height:64px;background:linear-gradient(135deg,var(--gold),var(--gold-l));border-radius:16px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:900;color:#000}
+.auth-logo h1{font-size:1.5rem;font-weight:800;background:linear-gradient(135deg,var(--gold),var(--gold-l));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.auth-logo p{color:var(--muted);font-size:.85rem;margin-top:4px}
+.msg-err{background:rgba(224,82,82,.1);border:1px solid rgba(224,82,82,.3);border-radius:var(--r);padding:10px 14px;color:var(--red);font-size:.84rem;margin-bottom:14px;display:none}
+/* ── LAYOUT ── */
+#coach-app{display:flex;min-height:100vh}
+#sidebar{width:260px;background:var(--surf);border-right:1px solid var(--bdr);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;overflow-y:auto}
+.sb-logo{padding:20px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:11px}
+.sb-mark{width:38px;height:38px;background:linear-gradient(135deg,var(--gold),var(--gold-l));border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#000;font-size:1rem;flex-shrink:0}
+.sb-title{font-size:.95rem;font-weight:800;background:linear-gradient(135deg,var(--gold),var(--gold-l));-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:block}
+.sb-sub{font-size:.7rem;color:var(--muted)}
+.sb-stats{padding:14px 18px;border-bottom:1px solid var(--bdr);display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sb-stat{background:var(--surf2);border-radius:var(--r);padding:10px 12px}
+.sb-stat-v{font-size:1.4rem;font-weight:800;background:linear-gradient(135deg,var(--gold),var(--gold-l));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
+.sb-stat-l{font-size:.7rem;color:var(--muted);margin-top:2px}
+.sb-nav{flex:1;padding:12px}
+.nav-item{display:flex;align-items:center;gap:11px;padding:10px 14px;border-radius:var(--r);cursor:pointer;color:var(--muted);font-size:.87rem;font-weight:500;transition:all var(--trans);margin-bottom:2px;user-select:none}
+.nav-item:hover{background:var(--surf2);color:var(--txt)}
+.nav-item.active{background:rgba(201,168,76,.12);color:var(--gold);font-weight:600}
+.nav-item svg{width:17px;height:17px;opacity:.7;flex-shrink:0}
+.nav-item.active svg{opacity:1}
+.sb-footer{padding:12px;border-top:1px solid var(--bdr)}
+.coach-chip{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surf2);border-radius:var(--r)}
+.coach-av{width:36px;height:36px;background:linear-gradient(135deg,var(--gold-d),var(--gold));border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.88rem;color:#fff;flex-shrink:0}
+.coach-nm{font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.coach-role{font-size:.7rem;color:var(--gold)}
+#main{margin-left:260px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid var(--bdr);background:rgba(17,17,17,.95);backdrop-filter:blur(10px);position:sticky;top:0;z-index:50}
+.top-bar h2{font-size:1.05rem;font-weight:700}
+.page-wrap{padding:26px 28px;flex:1}
+/* ── CLIENT LIST ── */
+.client-filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:20px}
+.filter-tab{padding:7px 16px;border-radius:20px;border:1px solid var(--bdr);background:transparent;color:var(--muted);font-size:.83rem;font-weight:600;cursor:pointer;transition:all var(--trans)}
+.filter-tab.active{background:rgba(201,168,76,.12);border-color:var(--bdr-g);color:var(--gold)}
+.search-input{background:var(--surf2);border:1px solid var(--bdr);border-radius:var(--r);padding:8px 14px;color:var(--txt);font-size:.87rem;outline:none;width:220px;transition:border-color var(--trans);font-family:inherit}
+.search-input:focus{border-color:var(--gold)}
+.search-input::placeholder{color:var(--dim)}
+.clients-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.client-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:18px 20px;cursor:pointer;transition:all var(--trans)}
+.client-card:hover{border-color:var(--bdr-g);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.cc-top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.cc-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--gold-d),var(--gold));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;color:#fff;flex-shrink:0}
+.cc-name{font-weight:700;font-size:.95rem;margin-bottom:2px}
+.cc-email{font-size:.78rem;color:var(--muted)}
+.cc-stats{display:flex;gap:12px;border-top:1px solid var(--bdr);padding-top:12px}
+.cc-stat{flex:1;text-align:center}
+.cc-stat-v{font-size:.95rem;font-weight:700;color:var(--gold)}
+.cc-stat-l{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+/* ── CLIENT DETAIL ── */
+.detail-header{background:var(--surf);border-bottom:1px solid var(--bdr);padding:20px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.detail-av{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--gold-d),var(--gold));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.2rem;color:#fff;flex-shrink:0}
+.detail-info{flex:1;min-width:0}
+.detail-name{font-size:1.3rem;font-weight:800;margin-bottom:4px}
+.detail-email{font-size:.85rem;color:var(--muted)}
+.detail-actions{display:flex;gap:8px;flex-wrap:wrap}
+.tabs{display:flex;gap:4px;padding:14px 28px;border-bottom:1px solid var(--bdr);background:var(--surf);overflow-x:auto}
+.tab{padding:8px 18px;border-radius:var(--r);font-size:.87rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all var(--trans);white-space:nowrap}
+.tab:hover{color:var(--txt)}
+.tab.active{background:rgba(201,168,76,.12);color:var(--gold)}
+.tab-content{padding:24px 28px}
+/* ── PROFIL TAB ── */
+.profile-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.pf-item{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px}
+.pf-label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.pf-value{font-size:.9rem;font-weight:600}
+/* ── PLAN EDITORS ── */
+.calc-panel{background:linear-gradient(135deg,rgba(201,168,76,.06),rgba(201,168,76,.02));border:1px solid var(--bdr-g);border-radius:var(--r2);padding:20px;margin-bottom:20px}
+.calc-panel h3{font-size:.88rem;font-weight:700;color:var(--gold);margin-bottom:14px;text-transform:uppercase;letter-spacing:.6px}
+.calc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:14px}
+.calc-result{background:var(--surf2);border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px}
+.calc-val{text-align:center}
+.calc-val .v{font-size:1.1rem;font-weight:800;color:var(--gold)}
+.calc-val .l{font-size:.68rem;color:var(--muted);text-transform:uppercase}
+.plan-targets{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:18px;margin-bottom:20px}
+.plan-targets-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:12px;align-items:end}
+.meal-ed-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);margin-bottom:14px;overflow:hidden}
+.meal-ed-hdr{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--bdr);flex-wrap:wrap;gap:8px}
+.meal-ed-totals{font-size:.78rem;color:var(--muted);flex:1;text-align:right}
+.item-table{width:100%;border-collapse:collapse;font-size:.83rem}
+.item-table th{text-align:left;padding:8px 10px;color:var(--muted);font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--bdr);background:var(--surf2)}
+.item-table td{padding:6px 8px;border-bottom:1px solid var(--bdr)}
+.item-table tr:last-child td{border-bottom:none}
+.item-table .input{padding:6px 10px;font-size:.83rem}
+.add-meal-row{display:flex;gap:10px;align-items:center;padding:14px 16px}
+.day-editor{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);margin-bottom:14px;overflow:hidden}
+.day-ed-hdr{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--bdr);flex-wrap:wrap}
+.day-toggle-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+/* ── DATA TAB ── */
+.data-chart-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:20px;margin-bottom:18px}
+.data-chart-card h3{font-size:.83rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:16px}
+.ci-table{width:100%;border-collapse:collapse;font-size:.84rem}
+.ci-table th{text-align:left;padding:9px 12px;color:var(--muted);font-size:.72rem;font-weight:600;text-transform:uppercase;border-bottom:1px solid var(--bdr)}
+.ci-table td{padding:11px 12px;border-bottom:1px solid var(--bdr)}
+.ci-table tr:last-child td{border-bottom:none}
+/* ── TOAST ── */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--surf2);border:1px solid var(--bdr-g);border-radius:var(--r);padding:12px 18px;font-size:.85rem;z-index:300;box-shadow:0 8px 28px rgba(0,0,0,.5);animation:fadeUp .22s ease;max-width:300px}
+.toast.ok{border-color:rgba(76,175,125,.4);color:var(--green)}
+.toast.err{border-color:rgba(224,82,82,.4);color:var(--red)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeUp .28s ease}
+.empty-state{text-align:center;padding:44px 20px;color:var(--muted)}
+.empty-state .icon{font-size:2.4rem;margin-bottom:10px}
+.divider{height:1px;background:var(--bdr);margin:18px 0}
+@media(max-width:768px){
+  #sidebar{display:none}
+  #main{margin-left:0}
+  .page-wrap{padding:16px}
+  .top-bar{padding:12px 16px}
+  .plan-targets-grid{grid-template-columns:1fr 1fr}
+  .detail-header{padding:16px}
+}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-page">
+  <div style="padding:20px">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <div class="mark">GP</div>
+        <h1>Coach Dashboard</h1>
+        <p>Kun for autoriserede coaches</p>
+      </div>
+      <div id="auth-err" class="msg-err"></div>
+      <form onsubmit="handleLogin(event)">
+        <div class="form-group"><label class="label">Email</label><input class="input" type="email" id="l-email" placeholder="din@email.dk" required autocomplete="email"></div>
+        <div class="form-group"><label class="label">Adgangskode</label><input class="input" type="password" id="l-pass" placeholder="••••••••" required autocomplete="current-password"></div>
+        <button class="btn btn-gold btn-full btn-lg" type="submit" id="l-btn" style="margin-top:6px">Log ind</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ACCESS DENIED -->
+<div id="access-denied" class="hidden" style="display:flex;align-items:center;justify-content:center;min-height:100vh">
+  <div style="text-align:center;padding:40px">
+    <div style="font-size:3rem;margin-bottom:16px">🔒</div>
+    <h2 style="font-size:1.4rem;margin-bottom:8px">Ingen adgang</h2>
+    <p style="color:var(--muted);margin-bottom:20px">Denne side er kun for coaches.</p>
+    <button class="btn btn-outline" onclick="handleLogout()">Log ud og prøv igen</button>
+  </div>
+</div>
+
+<!-- COACH APP -->
+<div id="coach-app" class="hidden">
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-mark">GP</div>
+      <div>
+        <span class="sb-title">GP Coaching</span>
+        <span class="sb-sub">Coach Dashboard</span>
+      </div>
+    </div>
+    <div class="sb-stats">
+      <div class="sb-stat">
+        <div class="sb-stat-v" id="st-total">0</div>
+        <div class="sb-stat-l">Klienter i alt</div>
+      </div>
+      <div class="sb-stat">
+        <div class="sb-stat-v" id="st-pending">0</div>
+        <div class="sb-stat-l">Afventer</div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <div class="nav-item active" onclick="showClientList()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Klienter
+      </div>
+    </nav>
+    <div class="sb-footer">
+      <div class="coach-chip">
+        <div class="coach-av" id="c-av">C</div>
+        <div style="flex:1;min-width:0">
+          <div class="coach-nm" id="c-nm">Coach</div>
+          <div class="coach-role">Coach</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="handleLogout()" title="Log ud" style="padding:5px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div id="main">
+    <!-- Top bar -->
+    <div class="top-bar">
+      <h2 id="main-title">Klienter</h2>
+      <span style="font-size:.82rem;color:var(--muted)" id="top-date"></span>
+    </div>
+
+    <!-- CLIENT LIST -->
+    <div id="pg-clients" class="page-wrap">
+      <div class="client-filters">
+        <button class="filter-tab active" data-filter="alle" onclick="setFilter('alle',this)">Alle</button>
+        <button class="filter-tab" data-filter="pending" onclick="setFilter('pending',this)">Afventer godkendelse</button>
+        <button class="filter-tab" data-filter="active" onclick="setFilter('active',this)">Aktive</button>
+        <input class="search-input" type="text" id="client-search" placeholder="Søg navn eller email..." oninput="renderClientList()">
+      </div>
+      <div class="clients-grid" id="clients-grid">
+        <div class="empty-state"><div class="icon">👥</div><p>Indlæser klienter...</p></div>
+      </div>
+    </div>
+
+    <!-- CLIENT DETAIL -->
+    <div id="pg-client" class="hidden">
+      <div class="detail-header">
+        <button class="btn btn-ghost btn-sm" onclick="showClientList()" style="margin-right:4px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          Tilbage
+        </button>
+        <div class="detail-av" id="d-avatar">?</div>
+        <div class="detail-info">
+          <div class="detail-name" id="d-name">—</div>
+          <div class="detail-email" id="d-email">—</div>
+        </div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span id="d-status-badge"></span>
+          <button class="btn btn-success btn-sm hidden" id="btn-approve" onclick="approveClient()">✓ Godkend klient</button>
+          <button class="btn btn-danger btn-sm hidden" id="btn-deactivate" onclick="deactivateClient()">Deaktiver</button>
+        </div>
+      </div>
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('profil',this)">👤 Profil</div>
+        <div class="tab" onclick="switchTab('kostplan',this)">🥗 Kostplan</div>
+        <div class="tab" onclick="switchTab('traening',this)">💪 Træning</div>
+        <div class="tab" onclick="switchTab('data',this)">📊 Data</div>
+      </div>
+      <div class="tab-content">
+        <div id="tab-profil"></div>
+        <div id="tab-kostplan" class="hidden"></div>
+        <div id="tab-traening" class="hidden"></div>
+        <div id="tab-data" class="hidden"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+const COACH_EMAIL = 'hamzaelouaz@gmail.com';
+const SUPA_URL = 'https://rtcayuwapitueckgprzc.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0Y2F5dXdhcGl0dWVja2dwcnpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NzA2MzAsImV4cCI6MjA5MzA0NjYzMH0.uwMOD1w3uvQFGLCTpB8kkGPxM1z1pRvzF2VEANr3VME';
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ─── State ────────────────────────────────────────────────────────────────
+let coach = null;
+let clients = [];
+let currentFilter = 'alle';
+let currentClient = null;
+let currentClientData = {};
+let weightChart = null;
+
+// Plan editor state
+let dp = { plan_name: 'Personlig kostplan', calories: 2000, protein: 150, carbs: 200, fat: 65, meals: [] };
+let wp = { program_name: 'Styrketræningsplan', days: [] };
+let mealCnt = 0, itemCnt = 0, exCnt = 0;
+const ALL_DAYS = ['Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag','Søndag'];
+
+// ════════════════════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('top-date').textContent =
+    new Date().toLocaleDateString('da-DK', { weekday:'long', day:'numeric', month:'long' });
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) await bootCoach(session.user);
+  sb.auth.onAuthStateChange(async (_, session) => {
+    if (session) await bootCoach(session.user);
+    else showAuthPage();
+  });
+});
+
+async function bootCoach(user) {
+  if (user.email.toLowerCase() !== COACH_EMAIL.toLowerCase()) {
+    document.getElementById('auth-page').style.display = 'none';
+    document.getElementById('access-denied').classList.remove('hidden');
+    return;
+  }
+  coach = user;
+  document.getElementById('auth-page').style.display = 'none';
+  document.getElementById('access-denied').classList.add('hidden');
+  document.getElementById('coach-app').classList.remove('hidden');
+  const initials = user.email.charAt(0).toUpperCase();
+  document.getElementById('c-av').textContent = initials;
+  document.getElementById('c-nm').textContent = user.email.split('@')[0];
+  await loadClients();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// AUTH
+// ════════════════════════════════════════════════════════════════════════════
+function showAuthPage() {
+  document.getElementById('auth-page').style.display = 'flex';
+  document.getElementById('coach-app').classList.add('hidden');
+  document.getElementById('access-denied').classList.add('hidden');
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById('l-btn');
+  btn.textContent = 'Logger ind...'; btn.disabled = true;
+  const { error } = await sb.auth.signInWithPassword({
+    email: document.getElementById('l-email').value,
+    password: document.getElementById('l-pass').value
+  });
+  if (error) {
+    const el = document.getElementById('auth-err');
+    el.textContent = error.message.includes('Invalid') ? 'Forkert email eller adgangskode.' : error.message;
+    el.style.display = 'block';
+    btn.textContent = 'Log ind'; btn.disabled = false;
+  }
+}
+
+async function handleLogout() {
+  await sb.auth.signOut();
+  coach = null; clients = []; currentClient = null;
+  showAuthPage();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// CLIENT LIST
+// ════════════════════════════════════════════════════════════════════════════
+async function loadClients() {
+  const { data, error } = await sb.from('profiles')
+    .select('*')
+    .neq('role', 'coach')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    document.getElementById('clients-grid').innerHTML = `
+      <div class="empty-state" style="grid-column:1/-1">
+        <div class="icon">⚠️</div>
+        <p style="color:var(--red)">Kunne ikke hente klienter.<br>
+        <span style="font-size:.8rem">Tjek at RLS-politikker tillader coach adgang til profiles-tabellen.</span></p>
+      </div>`;
+    return;
+  }
+
+  clients = data || [];
+  const pending = clients.filter(c => c.status === 'pending').length;
+  document.getElementById('st-total').textContent = clients.length;
+  document.getElementById('st-pending').textContent = pending;
+  renderClientList();
+}
+
+function setFilter(filter, el) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderClientList();
+}
+
+function renderClientList() {
+  const search = document.getElementById('client-search').value.toLowerCase();
+  let filtered = clients.filter(c => {
+    const matchSearch = !search ||
+      (c.full_name || '').toLowerCase().includes(search) ||
+      (c.email || '').toLowerCase().includes(search);
+    const matchFilter = currentFilter === 'alle' ||
+      (currentFilter === 'pending' && c.status === 'pending') ||
+      (currentFilter === 'active' && c.status === 'active');
+    return matchSearch && matchFilter;
+  });
+
+  const grid = document.getElementById('clients-grid');
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="icon">👥</div><p>Ingen klienter fundet</p></div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(c => {
+    const name = c.full_name || c.email?.split('@')[0] || 'Ukendt';
+    const initials = name.charAt(0).toUpperCase();
+    const statusBadge = c.status === 'active'
+      ? '<span class="badge badge-active">Aktiv</span>'
+      : '<span class="badge badge-pending">Afventer</span>';
+    const joined = new Date(c.created_at).toLocaleDateString('da-DK', { day:'numeric', month:'short', year:'numeric' });
+    return `
+      <div class="client-card" onclick="openClient('${c.id}')">
+        <div class="cc-top">
+          <div class="cc-avatar">${initials}</div>
+          <div style="flex:1;min-width:0">
+            <div class="cc-name">${escHtml(name)}</div>
+            <div class="cc-email">${escHtml(c.email || '')}</div>
+          </div>
+          ${statusBadge}
+        </div>
+        <div class="cc-stats">
+          <div class="cc-stat"><div class="cc-stat-v">${joined}</div><div class="cc-stat-l">Tilmeldt</div></div>
+          <div class="cc-stat"><div class="cc-stat-v" id="ci-count-${c.id}">—</div><div class="cc-stat-l">Check-ins</div></div>
+          <div class="cc-stat"><div class="cc-stat-v" id="weight-${c.id}">—</div><div class="cc-stat-l">Seneste vægt</div></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Load quick stats for each visible client
+  filtered.forEach(c => loadClientQuickStats(c.id));
+}
+
+async function loadClientQuickStats(clientId) {
+  const [{ data: ci }, { data: wl }] = await Promise.all([
+    sb.from('checkins').select('id').eq('user_id', clientId),
+    sb.from('weight_log').select('weight').eq('user_id', clientId).order('date', { ascending: false }).limit(1)
+  ]);
+  const ciEl = document.getElementById('ci-count-' + clientId);
+  const wEl = document.getElementById('weight-' + clientId);
+  if (ciEl) ciEl.textContent = ci?.length ?? '0';
+  if (wEl) wEl.textContent = wl?.[0]?.weight ? wl[0].weight + ' kg' : '—';
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// CLIENT DETAIL
+// ════════════════════════════════════════════════════════════════════════════
+async function openClient(id) {
+  currentClient = clients.find(c => c.id === id);
+  if (!currentClient) return;
+
+  document.getElementById('pg-clients').classList.add('hidden');
+  document.getElementById('pg-client').classList.remove('hidden');
+  document.getElementById('main-title').textContent = currentClient.full_name || 'Klient';
+
+  const name = currentClient.full_name || currentClient.email?.split('@')[0] || 'Klient';
+  document.getElementById('d-avatar').textContent = name.charAt(0).toUpperCase();
+  document.getElementById('d-name').textContent = name;
+  document.getElementById('d-email').textContent = currentClient.email || '';
+
+  // Status badge + action buttons
+  const isActive = currentClient.status === 'active';
+  document.getElementById('d-status-badge').innerHTML = isActive
+    ? '<span class="badge badge-active">✓ Aktiv</span>'
+    : '<span class="badge badge-pending">⏳ Afventer godkendelse</span>';
+  document.getElementById('btn-approve').classList.toggle('hidden', isActive);
+  document.getElementById('btn-deactivate').classList.toggle('hidden', !isActive);
+
+  // Load all client data
+  const [{ data: intake }, { data: dietData }, { data: workoutData }, { data: weightLog }, { data: checkins }] = await Promise.all([
+    sb.from('intake_forms').select('*').eq('user_id', id).maybeSingle(),
+    sb.from('client_data').select('*').eq('user_id', id).eq('type', 'diet').order('created_at', { ascending: false }).limit(1).maybeSingle(),
+    sb.from('client_data').select('*').eq('user_id', id).eq('type', 'workout').order('created_at', { ascending: false }).limit(1).maybeSingle(),
+    sb.from('weight_log').select('*').eq('user_id', id).order('date', { ascending: false }).limit(30),
+    sb.from('checkins').select('*').eq('user_id', id).order('created_at', { ascending: false })
+  ]);
+
+  currentClientData = {
+    intake: intake || null,
+    diet: dietData?.data || null,
+    workout: workoutData?.data || null,
+    weightLog: weightLog || [],
+    checkins: checkins || []
+  };
+
+  // Initialize plan editors from existing data
+  if (currentClientData.diet) {
+    dp = { ...currentClientData.diet };
+    mealCnt = (dp.meals || []).reduce((max, m) => Math.max(max, m.id || 0), 0);
+    (dp.meals || []).forEach(m => {
+      itemCnt = Math.max(itemCnt, ...(m.items || []).map(i => i.id || 0), 0);
+    });
+  } else {
+    dp = { plan_name: 'Personlig kostplan', calories: 2000, protein: 150, carbs: 200, fat: 65, meals: [] };
+    mealCnt = 0; itemCnt = 0;
+  }
+
+  if (currentClientData.workout) {
+    wp = { ...currentClientData.workout };
+    exCnt = (wp.days || []).reduce((max, d) => Math.max(max, ...(d.exercises || []).map(e => e.id || 0), 0), 0);
+  } else {
+    wp = { program_name: 'Styrketræningsplan', days: [] };
+    exCnt = 0;
+  }
+
+  // Show first tab
+  switchTab('profil', document.querySelector('.tab.active'));
+}
+
+function showClientList() {
+  document.getElementById('pg-client').classList.add('hidden');
+  document.getElementById('pg-clients').classList.remove('hidden');
+  document.getElementById('main-title').textContent = 'Klienter';
+  if (weightChart) { weightChart.destroy(); weightChart = null; }
+}
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  else document.querySelectorAll('.tab').forEach((t, i) => {
+    if (['profil','kostplan','traening','data'][i] === tab) t.classList.add('active');
+  });
+  ['profil','kostplan','traening','data'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('hidden', t !== tab);
+  });
+  if (tab === 'profil') renderProfilTab();
+  if (tab === 'kostplan') renderKostplanTab();
+  if (tab === 'traening') renderTræningTab();
+  if (tab === 'data') renderDataTab();
+}
+
+// ── APPROVE / DEACTIVATE ───────────────────────────────────────────────────
+async function approveClient() {
+  const { error } = await sb.from('profiles')
+    .update({ status: 'active' })
+    .eq('id', currentClient.id);
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  currentClient.status = 'active';
+  const c = clients.find(x => x.id === currentClient.id);
+  if (c) c.status = 'active';
+  document.getElementById('d-status-badge').innerHTML = '<span class="badge badge-active">✓ Aktiv</span>';
+  document.getElementById('btn-approve').classList.add('hidden');
+  document.getElementById('btn-deactivate').classList.remove('hidden');
+  document.getElementById('st-pending').textContent = clients.filter(c => c.status === 'pending').length;
+  toast('Klient godkendt! De kan nu se deres plan.', 'ok');
+}
+
+async function deactivateClient() {
+  const { error } = await sb.from('profiles')
+    .update({ status: 'pending' })
+    .eq('id', currentClient.id);
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  currentClient.status = 'pending';
+  const c = clients.find(x => x.id === currentClient.id);
+  if (c) c.status = 'pending';
+  document.getElementById('d-status-badge').innerHTML = '<span class="badge badge-pending">⏳ Afventer godkendelse</span>';
+  document.getElementById('btn-approve').classList.remove('hidden');
+  document.getElementById('btn-deactivate').classList.add('hidden');
+  toast('Klient deaktiveret.', 'ok');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// PROFIL TAB
+// ════════════════════════════════════════════════════════════════════════════
+function renderProfilTab() {
+  const d = currentClientData.intake?.data || {};
+  const rows = [
+    ['Alder', d.age ? d.age + ' år' : '—'],
+    ['Køn', d.gender || '—'],
+    ['Højde', d.height ? d.height + ' cm' : '—'],
+    ['Startvægt', d.startWeight ? d.startWeight + ' kg' : '—'],
+    ['Målvægt', d.goalWeight ? d.goalWeight + ' kg' : '—'],
+    ['Mål', d.goal || '—'],
+    ['Skader/begrænsninger', d.injuries || 'Ingen angivet'],
+    ['Sygdomme/medicin', d.conditions || 'Ingen angivet'],
+    ['Tidligere coaching', d.prevCoach || '—'],
+    ['Træningserfaring', d.experience || '—'],
+    ['Træningsdage/uge', d.trainingDays || '—'],
+    ['Træningstidspunkt', d.trainTime || '—'],
+    ['Udstyr', d.equipment || '—'],
+    ['Allergier', d.allergies || 'Ingen'],
+    ['Kan ikke lide', d.dislikes || 'Intet angivet'],
+    ['Måltider pr. dag', d.mealsPerDay || '—'],
+    ['Kosttype', d.dietType || '—'],
+    ['Madlavningsniveau', d.cooking || '—'],
+  ];
+
+  const noIntake = !currentClientData.intake;
+  document.getElementById('tab-profil').innerHTML = `
+    ${noIntake ? `<div style="background:rgba(91,141,238,.1);border:1px solid rgba(91,141,238,.3);border-radius:var(--r);padding:12px 16px;margin-bottom:18px;font-size:.87rem;color:var(--blue)">
+      ℹ️ Klienten har endnu ikke udfyldt opstartsskemaet.</div>` : ''}
+    <div class="profile-grid">
+      ${rows.map(([label, val]) => `
+        <div class="pf-item">
+          <div class="pf-label">${label}</div>
+          <div class="pf-value">${escHtml(String(val))}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// KOSTPLAN TAB — MACRO CALCULATOR + EDITOR
+// ════════════════════════════════════════════════════════════════════════════
+function renderKostplanTab() {
+  const d = currentClientData.intake?.data || {};
+  document.getElementById('tab-kostplan').innerHTML = `
+    <!-- Macro Calculator -->
+    <div class="calc-panel">
+      <h3>🧮 TDEE & Makro Beregner (Mifflin-St Jeor)</h3>
+      <div class="calc-grid">
+        <div class="form-group" style="margin:0">
+          <label class="label">Køn</label>
+          <select class="input" id="calc-gender">
+            <option value="mand" ${d.gender?.toLowerCase()==='mand'?'selected':''}>Mand</option>
+            <option value="kvinde" ${d.gender?.toLowerCase()==='kvinde'?'selected':''}>Kvinde</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="label">Alder</label>
+          <input class="input" type="number" id="calc-age" value="${d.age||25}" min="16" max="80">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="label">Højde (cm)</label>
+          <input class="input" type="number" id="calc-height" value="${d.height||175}">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="label">Vægt (kg)</label>
+          <input class="input" type="number" id="calc-weight" value="${d.startWeight||80}" step="0.1">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="label">Aktivitetsniveau</label>
+          <select class="input" id="calc-activity">
+            <option value="1.2">Stillesiddende (ingen træning)</option>
+            <option value="1.375">Let aktiv (1-2 dage/uge)</option>
+            <option value="1.55" selected>Moderat aktiv (3-5 dage/uge)</option>
+            <option value="1.725">Meget aktiv (6-7 dage/uge)</option>
+            <option value="1.9">Ekstremt aktiv (2× om dagen)</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="label">Mål</label>
+          <select class="input" id="calc-goal">
+            <option value="vægttab">Vægttab (−400 kcal)</option>
+            <option value="vedligeholdelse">Vedligeholdelse</option>
+            <option value="muskelmasse" selected>Muskelmasse (+300 kcal)</option>
+            <option value="styrke">Styrke (+200 kcal)</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-gold btn-sm" onclick="calcMacros()">Beregn makroer →</button>
+      <div id="calc-result" style="margin-top:12px"></div>
+    </div>
+
+    <!-- Plan targets -->
+    <div class="plan-targets">
+      <div style="font-size:.83rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Planmål</div>
+      <div class="plan-targets-grid">
+        <div class="form-group" style="margin:0"><label class="label">Plan navn</label><input class="input" id="dp-name" value="${escHtml(dp.plan_name)}"></div>
+        <div class="form-group" style="margin:0"><label class="label">Kalorier</label><input class="input" type="number" id="dp-kcal" value="${dp.calories}"></div>
+        <div class="form-group" style="margin:0"><label class="label">Protein (g)</label><input class="input" type="number" id="dp-protein" value="${dp.protein}"></div>
+        <div class="form-group" style="margin:0"><label class="label">Kulhydrat (g)</label><input class="input" type="number" id="dp-carbs" value="${dp.carbs}"></div>
+        <div class="form-group" style="margin:0"><label class="label">Fedt (g)</label><input class="input" type="number" id="dp-fat" value="${dp.fat}"></div>
+      </div>
+    </div>
+
+    <!-- Meal editor -->
+    <div id="diet-editor"></div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-outline" onclick="addMeal()">+ Tilføj måltid</button>
+      <button class="btn btn-gold" onclick="saveDietPlan()">💾 Gem kostplan</button>
+    </div>`;
+
+  renderDietEditor();
+}
+
+function calcMacros() {
+  const weight = +document.getElementById('calc-weight').value || 80;
+  const height = +document.getElementById('calc-height').value || 175;
+  const age = +document.getElementById('calc-age').value || 25;
+  const gender = document.getElementById('calc-gender').value;
+  const activity = +document.getElementById('calc-activity').value || 1.55;
+  const goal = document.getElementById('calc-goal').value;
+
+  const bmr = gender === 'kvinde'
+    ? 10 * weight + 6.25 * height - 5 * age - 161
+    : 10 * weight + 6.25 * height - 5 * age + 5;
+
+  const tdee = Math.round(bmr * activity);
+  const kcalMap = { vægttab: tdee - 400, vedligeholdelse: tdee, muskelmasse: tdee + 300, styrke: tdee + 200 };
+  const calories = Math.max(1200, kcalMap[goal] || tdee);
+  const protein = Math.round(weight * (goal === 'vægttab' ? 2.2 : 2.0));
+  const fat = Math.round(calories * 0.25 / 9);
+  const carbs = Math.max(0, Math.round((calories - protein * 4 - fat * 9) / 4));
+
+  document.getElementById('calc-result').innerHTML = `
+    <div class="calc-result">
+      <div class="calc-val"><div class="v">${tdee}</div><div class="l">TDEE</div></div>
+      <div style="color:var(--dim)">→</div>
+      <div class="calc-val"><div class="v" style="color:var(--green)">${calories}</div><div class="l">Mål kcal</div></div>
+      <div class="calc-val"><div class="v">${protein}g</div><div class="l">Protein</div></div>
+      <div class="calc-val"><div class="v">${carbs}g</div><div class="l">Kulhydrat</div></div>
+      <div class="calc-val"><div class="v">${fat}g</div><div class="l">Fedt</div></div>
+      <button class="btn btn-gold btn-sm" onclick="applyCalc(${calories},${protein},${carbs},${fat})" style="margin-left:auto">Anvend →</button>
+    </div>`;
+}
+
+function applyCalc(kcal, protein, carbs, fat) {
+  syncDietDOM();
+  dp.calories = kcal; dp.protein = protein; dp.carbs = carbs; dp.fat = fat;
+  document.getElementById('dp-kcal').value = kcal;
+  document.getElementById('dp-protein').value = protein;
+  document.getElementById('dp-carbs').value = carbs;
+  document.getElementById('dp-fat').value = fat;
+  toast('Makroer anvendt på planen', 'ok');
+}
+
+// ── DIET EDITOR ────────────────────────────────────────────────────────────
+function renderDietEditor() {
+  const el = document.getElementById('diet-editor');
+  if (!el) return;
+  el.innerHTML = (dp.meals || []).map(meal => renderMealCard(meal)).join('');
+}
+
+function renderMealCard(meal) {
+  const totals = (meal.items || []).reduce((a, i) => ({
+    cal: a.cal + (+i.calories||0), pro: a.pro + (+i.protein||0),
+    carb: a.carb + (+i.carbs||0), fat: a.fat + (+i.fat||0)
+  }), { cal: 0, pro: 0, carb: 0, fat: 0 });
+  return `
+    <div class="meal-ed-card" data-meal-id="${meal.id}">
+      <div class="meal-ed-hdr">
+        <input class="input m-name" value="${escHtml(meal.name)}" placeholder="Måltidsnavn" style="max-width:180px;flex-shrink:0">
+        <input class="input m-time" type="time" value="${meal.time||'12:00'}" style="width:105px;flex-shrink:0">
+        <div class="meal-ed-totals">${totals.cal} kcal &bull; ${totals.pro}g P &bull; ${totals.carb}g K &bull; ${totals.fat}g F</div>
+        <button class="btn btn-ghost btn-sm" onclick="syncDietDOM();removeMeal(${meal.id})">✕ Fjern</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="item-table">
+          <thead><tr><th>Ingrediens</th><th>Mængde</th><th>kcal</th><th>Protein</th><th>Kulh.</th><th>Fedt</th><th></th></tr></thead>
+          <tbody>
+            ${(meal.items || []).map(item => `
+              <tr data-item-id="${item.id}">
+                <td><input class="input i-name" value="${escHtml(item.name)}" placeholder="Fx havregrød"></td>
+                <td><input class="input i-amount" value="${escHtml(item.amount)}" placeholder="100g" style="width:80px"></td>
+                <td><input class="input i-cal" type="number" value="${item.calories||0}" min="0" style="width:65px"></td>
+                <td><input class="input i-pro" type="number" value="${item.protein||0}" min="0" style="width:65px"></td>
+                <td><input class="input i-carb" type="number" value="${item.carbs||0}" min="0" style="width:65px"></td>
+                <td><input class="input i-fat" type="number" value="${item.fat||0}" min="0" style="width:65px"></td>
+                <td><button class="btn btn-ghost btn-sm" onclick="syncDietDOM();removeItem(${meal.id},${item.id})">✕</button></td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div style="padding:10px 14px">
+        <button class="btn btn-ghost btn-sm" onclick="syncDietDOM();addItem(${meal.id})">+ Ingrediens</button>
+      </div>
+    </div>`;
+}
+
+function syncDietDOM() {
+  const v = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+  dp.plan_name = v('dp-name') || dp.plan_name;
+  dp.calories = +v('dp-kcal') || dp.calories;
+  dp.protein = +v('dp-protein') || dp.protein;
+  dp.carbs = +v('dp-carbs') || dp.carbs;
+  dp.fat = +v('dp-fat') || dp.fat;
+  document.querySelectorAll('[data-meal-id]').forEach(card => {
+    const meal = dp.meals.find(m => m.id === +card.dataset.mealId);
+    if (!meal) return;
+    meal.name = card.querySelector('.m-name')?.value || meal.name;
+    meal.time = card.querySelector('.m-time')?.value || meal.time;
+    const newItems = [];
+    card.querySelectorAll('[data-item-id]').forEach(row => {
+      newItems.push({
+        id: +row.dataset.itemId,
+        name: row.querySelector('.i-name')?.value || '',
+        amount: row.querySelector('.i-amount')?.value || '',
+        calories: +row.querySelector('.i-cal')?.value || 0,
+        protein: +row.querySelector('.i-pro')?.value || 0,
+        carbs: +row.querySelector('.i-carb')?.value || 0,
+        fat: +row.querySelector('.i-fat')?.value || 0,
+      });
+    });
+    meal.items = newItems;
+    const t = meal.items.reduce((a,i)=>({calories:a.calories+i.calories,protein:a.protein+i.protein,carbs:a.carbs+i.carbs,fat:a.fat+i.fat}),{calories:0,protein:0,carbs:0,fat:0});
+    Object.assign(meal, t);
+  });
+}
+
+function addMeal() {
+  syncDietDOM();
+  dp.meals.push({ id: ++mealCnt, name: 'Nyt måltid', time: '12:00', calories:0, protein:0, carbs:0, fat:0, items: [] });
+  renderDietEditor();
+}
+
+function removeMeal(id) {
+  dp.meals = dp.meals.filter(m => m.id !== id);
+  renderDietEditor();
+}
+
+function addItem(mealId) {
+  const meal = dp.meals.find(m => m.id === mealId);
+  if (meal) meal.items.push({ id: ++itemCnt, name:'', amount:'', calories:0, protein:0, carbs:0, fat:0 });
+  renderDietEditor();
+}
+
+function removeItem(mealId, itemId) {
+  const meal = dp.meals.find(m => m.id === mealId);
+  if (meal) meal.items = meal.items.filter(i => i.id !== itemId);
+  renderDietEditor();
+}
+
+async function saveDietPlan() {
+  syncDietDOM();
+  // Build clean plan (recalculate meal totals from items)
+  const plan = {
+    plan_name: dp.plan_name,
+    calories: dp.calories, protein: dp.protein, carbs: dp.carbs, fat: dp.fat,
+    meals: dp.meals.map(m => ({
+      ...m,
+      calories: m.items.reduce((a,i)=>a+(+i.calories||0),0),
+      protein: m.items.reduce((a,i)=>a+(+i.protein||0),0),
+      carbs: m.items.reduce((a,i)=>a+(+i.carbs||0),0),
+      fat: m.items.reduce((a,i)=>a+(+i.fat||0),0),
+    }))
+  };
+  const { error } = await upsertClientData(currentClient.id, 'diet', plan);
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  currentClientData.diet = plan;
+  toast('Kostplan gemt! ✓', 'ok');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// TRÆNING TAB — WORKOUT EDITOR
+// ════════════════════════════════════════════════════════════════════════════
+function renderTræningTab() {
+  const activeDays = wp.days.map(d => d.day);
+  document.getElementById('tab-traening').innerHTML = `
+    <div class="form-group" style="max-width:320px;margin-bottom:18px">
+      <label class="label">Program navn</label>
+      <input class="input" id="wp-name" value="${escHtml(wp.program_name)}">
+    </div>
+    <div style="margin-bottom:20px">
+      <div class="label" style="margin-bottom:8px">Aktive træningsdage</div>
+      <div class="day-toggle-row">
+        ${ALL_DAYS.map(day => `
+          <button class="btn ${activeDays.includes(day) ? 'btn-gold' : 'btn-outline'} btn-sm"
+                  id="daybtn-${day}" onclick="toggleDay('${day}')">
+            ${day.substring(0,3)}
+          </button>`).join('')}
+      </div>
+    </div>
+    <div id="workout-editor"></div>
+    <button class="btn btn-gold" onclick="saveWorkoutPlan()" style="margin-top:8px">💾 Gem træningsplan</button>`;
+  renderWorkoutEditor();
+}
+
+function renderWorkoutEditor() {
+  const el = document.getElementById('workout-editor');
+  if (!el) return;
+  el.innerHTML = wp.days.map(day => `
+    <div class="day-editor" data-day="${day.day}">
+      <div class="day-ed-hdr">
+        <span class="badge badge-gold">${day.day}</span>
+        <input class="input day-name" value="${escHtml(day.name)}" placeholder="Fx Bryst & Triceps" style="max-width:260px;flex:1">
+      </div>
+      <div style="overflow-x:auto">
+        <table class="item-table">
+          <thead><tr><th>Øvelse</th><th>Sæt</th><th>Reps</th><th>Vægt</th><th>Hvile (s)</th><th></th></tr></thead>
+          <tbody>
+            ${day.exercises.map(ex => `
+              <tr data-ex-id="${ex.id}">
+                <td><input class="input ex-nm" value="${escHtml(ex.name)}" placeholder="Fx Bænkpres" style="min-width:160px"></td>
+                <td><input class="input ex-sets" type="number" value="${ex.sets}" min="1" max="20" style="width:58px"></td>
+                <td><input class="input ex-reps" value="${escHtml(ex.reps)}" placeholder="8-12" style="width:78px"></td>
+                <td><input class="input ex-weight" value="${escHtml(ex.weight)}" placeholder="80 kg" style="width:88px"></td>
+                <td><input class="input ex-rest" type="number" value="${ex.rest}" min="0" style="width:75px"></td>
+                <td><button class="btn btn-ghost btn-sm" onclick="syncWorkoutDOM();removeExercise('${day.day}',${ex.id})">✕</button></td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div style="padding:10px 14px">
+        <button class="btn btn-ghost btn-sm" onclick="syncWorkoutDOM();addExercise('${day.day}')">+ Øvelse</button>
+      </div>
+    </div>`).join('');
+}
+
+function syncWorkoutDOM() {
+  const wpNameEl = document.getElementById('wp-name');
+  if (wpNameEl) wp.program_name = wpNameEl.value;
+  document.querySelectorAll('[data-day]').forEach(dayEl => {
+    const day = wp.days.find(d => d.day === dayEl.dataset.day);
+    if (!day) return;
+    const nm = dayEl.querySelector('.day-name');
+    if (nm) day.name = nm.value;
+    day.exercises = [];
+    dayEl.querySelectorAll('[data-ex-id]').forEach(row => {
+      day.exercises.push({
+        id: +row.dataset.exId,
+        name: row.querySelector('.ex-nm')?.value || '',
+        sets: +row.querySelector('.ex-sets')?.value || 3,
+        reps: row.querySelector('.ex-reps')?.value || '8-12',
+        weight: row.querySelector('.ex-weight')?.value || '',
+        rest: +row.querySelector('.ex-rest')?.value || 90,
+      });
+    });
+  });
+}
+
+function toggleDay(day) {
+  syncWorkoutDOM();
+  const idx = wp.days.findIndex(d => d.day === day);
+  if (idx >= 0) {
+    wp.days.splice(idx, 1);
+  } else {
+    wp.days.push({ day, name: day + ' træning', exercises: [] });
+    wp.days.sort((a, b) => ALL_DAYS.indexOf(a.day) - ALL_DAYS.indexOf(b.day));
+  }
+  renderTræningTab();
+}
+
+function addExercise(dayName) {
+  const day = wp.days.find(d => d.day === dayName);
+  if (day) day.exercises.push({ id: ++exCnt, name:'', sets:3, reps:'8-12', weight:'', rest:90 });
+  renderWorkoutEditor();
+}
+
+function removeExercise(dayName, exId) {
+  const day = wp.days.find(d => d.day === dayName);
+  if (day) day.exercises = day.exercises.filter(e => e.id !== exId);
+  renderWorkoutEditor();
+}
+
+async function saveWorkoutPlan() {
+  syncWorkoutDOM();
+  const plan = {
+    program_name: wp.program_name,
+    days: wp.days.map(d => ({
+      day: d.day, name: d.name,
+      exercises: d.exercises.filter(e => e.name.trim())
+    }))
+  };
+  const { error } = await upsertClientData(currentClient.id, 'workout', plan);
+  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  currentClientData.workout = plan;
+  toast('Træningsplan gemt! ✓', 'ok');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// DATA TAB
+// ════════════════════════════════════════════════════════════════════════════
+function renderDataTab() {
+  const wl = currentClientData.weightLog || [];
+  const ci = currentClientData.checkins || [];
+
+  document.getElementById('tab-data').innerHTML = `
+    <div class="data-chart-card">
+      <h3>Vægtkurve</h3>
+      ${wl.length ? '<canvas id="client-weight-chart" height="90"></canvas>' : '<p style="color:var(--muted);font-size:.87rem">Ingen vejninger logget endnu.</p>'}
+    </div>
+    <div class="card">
+      <h3 style="font-size:.83rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">Check-in historik</h3>
+      ${ci.length ? `
+        <table class="ci-table">
+          <thead><tr><th>Uge</th><th>Vægt</th><th>Energi</th><th>Søvn</th><th>Humør</th><th>Bemærkninger</th></tr></thead>
+          <tbody>
+            ${ci.map(c => `
+              <tr>
+                <td>Uge ${c.week_number}, ${c.year}</td>
+                <td><strong>${c.weight} kg</strong></td>
+                <td><span style="color:var(--gold)">${c.energy_level}/10</span></td>
+                <td><span style="color:var(--gold)">${c.sleep_quality}/10</span></td>
+                <td><span style="color:var(--gold)">${c.mood||'—'}/10</span></td>
+                <td style="color:var(--muted);font-size:.82rem;max-width:200px">${escHtml(c.notes||'—')}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>` : '<p style="color:var(--muted);font-size:.87rem">Ingen check-ins endnu.</p>'}
+    </div>`;
+
+  if (wl.length) {
+    const sorted = [...wl].reverse();
+    const ctx = document.getElementById('client-weight-chart')?.getContext('2d');
+    if (!ctx) return;
+    if (weightChart) weightChart.destroy();
+    weightChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: sorted.map(w => new Date(w.date).toLocaleDateString('da-DK',{day:'numeric',month:'short'})),
+        datasets: [{
+          data: sorted.map(w => w.weight),
+          borderColor: '#c9a84c', backgroundColor: 'rgba(201,168,76,0.07)',
+          borderWidth: 2.5, pointBackgroundColor: '#c9a84c', pointRadius: 5, tension: 0.4, fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false }, tooltip: { backgroundColor:'#1a1a1a', borderColor:'rgba(201,168,76,.3)', borderWidth:1, titleColor:'#f0f0f0', bodyColor:'#888', callbacks:{ label: c => ` ${c.parsed.y} kg` } } },
+        scales: {
+          x: { grid: { color:'rgba(255,255,255,0.04)' }, ticks: { color:'#777', font:{size:11} } },
+          y: { grid: { color:'rgba(255,255,255,0.04)' }, ticks: { color:'#777', font:{size:11}, callback: v => v+' kg' } }
+        }
+      }
+    });
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════════════════════════
+async function upsertClientData(clientId, type, data) {
+  const { data: existing } = await sb.from('client_data')
+    .select('id').eq('user_id', clientId).eq('type', type).maybeSingle();
+  if (existing) {
+    return sb.from('client_data').update({ data }).eq('id', existing.id);
+  }
+  return sb.from('client_data').insert({ user_id: clientId, type, data });
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toast(msg, type = 'ok') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+</script>
+</body>
+</html>
