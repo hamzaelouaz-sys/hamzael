@@ -778,8 +778,8 @@ async function loadProfile() {
 }
 
 async function isOnboarded() {
-  const { data } = await sb.from('intake_forms').select('completed').eq('user_id', S.user.id).maybeSingle();
-  return data?.completed === true;
+  const { data } = await sb.from('intake_forms').select('id').eq('user_id', S.user.id).maybeSingle();
+  return data !== null;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -922,7 +922,7 @@ function obBack() { saveObData(OB.step); renderObStep(OB.step - 1); }
 async function obSubmit() {
   saveObData(4);
   const { error } = await sb.from('intake_forms').upsert({
-    user_id: S.user.id, step: 4, data: OB.data, completed: true
+    user_id: S.user.id, step: 4, data: OB.data
   });
   if (error) { toast('Fejl ved gemning: ' + error.message, 'err'); return; }
   if (OB.data.startWeight) {
