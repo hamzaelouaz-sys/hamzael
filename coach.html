@@ -911,6 +911,7 @@ function renderProfilTab() {
 // KOSTPLAN TAB — MACRO CALCULATOR + EDITOR
 // ════════════════════════════════════════════════════════════════════════════
 function renderKostplanTab() {
+  console.log('DP_DEBUG:', JSON.stringify(dp));
   const d = currentClientData.intake?.data || currentClientData.intake || {};
   document.getElementById('tab-kostplan').innerHTML = `
     <!-- Macro Calculator -->
