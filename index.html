@@ -639,11 +639,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
         <p>Log din dag og følg din udvikling over tid</p>
       </div>
       <div class="weight-form-card">
-        <h3>Log i dag</h3>
+        <h3>Log en dag <span style="font-size:.75rem;font-weight:400;color:var(--muted);margin-left:6px">← skift dato for at logge en glem dag</span></h3>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;align-items:end">
           <div class="form-group" style="margin-bottom:0">
             <label class="label">Dato</label>
-            <input class="input" type="date" id="wf-date">
+            <input class="input" type="date" id="wf-date" onchange="saveDLDraft()">
           </div>
           <div class="form-group" style="margin-bottom:0">
             <label class="label">Vægt (kg)</label>
@@ -870,6 +870,7 @@ function clearCIDraft() {
 function saveDLDraft() {
   if (!S.user) return;
   localStorage.setItem('dl_draft_' + S.user.id, JSON.stringify({
+    date:   document.getElementById('wf-date')?.value   || '',
     weight: document.getElementById('wf-weight')?.value || '',
     steps:  document.getElementById('wf-steps')?.value  || '',
     sleep:  document.getElementById('wf-sleep')?.value  || '',
@@ -881,6 +882,7 @@ function restoreDLDraft() {
   const raw = localStorage.getItem('dl_draft_' + S.user.id);
   if (!raw) return;
   let d; try { d = JSON.parse(raw); } catch { return; }
+  if (d.date)   document.getElementById('wf-date').value   = d.date;
   if (d.weight) document.getElementById('wf-weight').value = d.weight;
   if (d.steps)  document.getElementById('wf-steps').value  = d.steps;
   if (d.sleep)  document.getElementById('wf-sleep').value  = d.sleep;
