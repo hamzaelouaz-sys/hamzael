@@ -315,7 +315,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
       <div class="auth-logo">
         <div class="mark">HE</div>
         <h1>Det Skarpe Liv</h1>
-        <p>Din personlige fitness platform</p>
+        <p>Klientportal</p>
       </div>
       <div class="auth-tabs">
         <div class="auth-tab active" onclick="switchTab('login')">Log ind</div>
@@ -576,7 +576,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
     <div id="pg-diet" class="page-wrap fade-in hidden">
       <div class="diet-hero">
         <div>
-          <div class="badge gold" style="margin-bottom:10px">Din personlige kostplan</div>
+          <div class="badge gold" style="margin-bottom:10px">Din kostplan</div>
           <h2 id="diet-title">Kostplan</h2>
           <p id="diet-desc" style="color:var(--muted);font-size:.88rem;margin-top:4px"></p>
         </div>
@@ -829,6 +829,7 @@ let S = {
   currentPage: 'dashboard'
 };
 let msgChannel = null;
+let pendingChannel = null;
 
 // ─── Charts ─────────────────────────────────────────────────────────────────
 let C = {};
@@ -1014,12 +1015,16 @@ async function checkUnreadMessages() {
   if (count > 0) updateMsgBadge(count);
 }
 
+function getWeekYear(date = new Date()) {
+  const soy = new Date(date.getFullYear(), 0, 1);
+  const week = Math.ceil(((date - soy) / 86400000 + soy.getDay() + 1) / 7);
+  return { week, year: date.getFullYear() };
+}
+
 function updateWeekInfo() {
-  const now = new Date();
-  const startOfYear = new Date(now.getFullYear(), 0, 1);
-  const week = Math.ceil(((now - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
+  const { week, year } = getWeekYear();
   document.getElementById('ci-week').textContent = week;
-  document.getElementById('ci-year').textContent = now.getFullYear();
+  document.getElementById('ci-year').textContent = year;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -1068,10 +1073,12 @@ function showPending() {
 }
 
 function startPendingRealtime() {
-  sb.channel('pending-' + S.user.id)
+  if (pendingChannel) sb.removeChannel(pendingChannel);
+  pendingChannel = sb.channel('pending-' + S.user.id)
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${S.user.id}` }, payload => {
       if (payload.new.status === 'active') {
         S.profile = payload.new;
+        sb.removeChannel(pendingChannel); pendingChannel = null;
         toast('Din konto er nu aktiveret — velkommen! 🎉', 'ok');
         document.getElementById('pending-page').classList.add('hidden');
         if (EJS_PUBLIC_KEY !== 'DIN_PUBLIC_KEY') emailjs.init(EJS_PUBLIC_KEY);
@@ -1141,8 +1148,9 @@ async function handleRegister(e) {
 }
 
 async function handleLogout() {
+  if (msgChannel) { sb.removeChannel(msgChannel); msgChannel = null; }
   await sb.auth.signOut();
-  S = { user: null, profile: null, diet: null, workout: null, weightLog: [], checkins: [], currentPage: 'dashboard' };
+  S = { user: null, profile: null, diet: null, workout: null, weightLog: [], checkins: [], messages: [], completions: [], strengthLogs: {}, currentPage: 'dashboard' };
   showAuth();
 }
 
@@ -1193,6 +1201,7 @@ async function loadProfile() {
 }
 
 async function isOnboarded() {
+  if (localStorage.getItem('gp_ob_' + S.user.id) === '1') return true;
   const { data } = await sb.from('intake_forms').select('completed').eq('user_id', S.user.id).maybeSingle();
   if (data?.completed) {
     localStorage.setItem('gp_ob_' + S.user.id, '1');
@@ -1206,11 +1215,11 @@ async function isOnboarded() {
 // ONBOARDING
 // ════════════════════════════════════════════════════════════════════════════
 const OB_STEPS = [
-  { num: 1, title: 'Personlige oplysninger', desc: 'Fortæl os lidt om dig selv.' },
+  { num: 1, title: 'Personlige oplysninger', desc: 'Hvem er du, og hvad laver du til daglig?' },
   { num: 2, title: 'Mål & Motivation', desc: 'Hvad vil du opnå, og hvad driver dig?' },
-  { num: 3, title: 'Sundhedshistorik', desc: 'Skader eller tilstande vi skal tage hensyn til.' },
-  { num: 4, title: 'Træningsbaggrund', desc: 'Din erfaring og træningstilgængelighed.' },
-  { num: 5, title: 'Kostvaner', desc: 'Allergier, præferencer og måltidsmønster.' }
+  { num: 3, title: 'Sundhedshistorik', desc: 'Har du skader eller sygdomme Hamza skal kende til?' },
+  { num: 4, title: 'Træningsbaggrund', desc: 'Hvad er din erfaring, og hvornår kan du træne?' },
+  { num: 5, title: 'Kostvaner', desc: 'Hvad spiser du, og hvad kan du ikke lide?' }
 ];
 
 function renderObStep(step) {
@@ -1603,7 +1612,7 @@ function renderDashCheckins() {
         <div style="font-size:.78rem;color:var(--muted);margin-top:2px">${c.notes ? c.notes.substring(0, 60) + (c.notes.length > 60 ? '…' : '') : 'Ingen bemærkninger'}</div>
       </div>
       <div style="text-align:right;flex-shrink:0;margin-left:16px">
-        <div style="color:var(--gold);font-weight:800">${c.weight} kg</div>
+        <div style="color:var(--gold);font-weight:800">${c.weight != null ? c.weight + ' kg' : '—'}</div>
         <div style="font-size:.75rem;color:var(--muted)">Energi ${c.energy_level}/10</div>
       </div>
     </div>`).join('');
@@ -1666,7 +1675,7 @@ async function loadDiet() {
   }
   const d = S.diet;
   document.getElementById('diet-title').textContent = d.plan_name || 'Din kostplan';
-  document.getElementById('diet-desc').textContent = `${d.calories} kcal dagligt · Coach tilpasset plan`;
+  document.getElementById('diet-desc').textContent = `${d.calories} kcal om dagen`;
   const badges = [
     { v: d.calories, l: 'Kalorier', u: 'kcal' },
     { v: d.protein + 'g', l: 'Protein', u: '' },
@@ -1720,14 +1729,31 @@ function toggleMeal(i) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// TRAINING
+// TRAINING – muscle icons
 // ════════════════════════════════════════════════════════════════════════════
-async function loadTraining() {
-  const now = new Date();
-  const startOfYear = new Date(now.getFullYear(), 0, 1);
-  const thisWeek = Math.ceil(((now - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
-  const thisYear = now.getFullYear();
+const _MI = {
+  chest: `<circle cx="22" cy="8" r="5" fill="#2d2d2d"/><rect x="20" y="13" width="4" height="3" fill="#2d2d2d"/><rect x="14" y="16" width="16" height="14" rx="2" fill="#2d2d2d"/><rect x="7" y="16" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="30" y="16" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="14" y="30" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="23" y="30" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="14" y="16" width="16" height="8" rx="2" fill="rgba(201,168,76,.8)"/>`,
+  back:  `<circle cx="22" cy="8" r="5" fill="#2d2d2d"/><rect x="20" y="13" width="4" height="3" fill="#2d2d2d"/><rect x="14" y="16" width="16" height="14" rx="2" fill="#2d2d2d"/><rect x="7" y="16" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="30" y="16" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="14" y="30" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="23" y="30" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="14" y="16" width="16" height="14" rx="2" fill="rgba(201,168,76,.8)"/>`,
+  legs:  `<circle cx="22" cy="8" r="5" fill="#2d2d2d"/><rect x="20" y="13" width="4" height="3" fill="#2d2d2d"/><rect x="14" y="16" width="16" height="14" rx="2" fill="#2d2d2d"/><rect x="7" y="16" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="30" y="16" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="14" y="30" width="7" height="12" rx="2" fill="rgba(201,168,76,.8)"/><rect x="23" y="30" width="7" height="12" rx="2" fill="rgba(201,168,76,.8)"/>`,
+  shldr: `<circle cx="22" cy="8" r="5" fill="#2d2d2d"/><rect x="20" y="13" width="4" height="3" fill="#2d2d2d"/><rect x="14" y="16" width="16" height="14" rx="2" fill="#2d2d2d"/><rect x="7" y="16" width="7" height="6" rx="2" fill="rgba(201,168,76,.8)"/><rect x="30" y="16" width="7" height="6" rx="2" fill="rgba(201,168,76,.8)"/><rect x="7" y="22" width="7" height="6" rx="2" fill="#2d2d2d"/><rect x="30" y="22" width="7" height="6" rx="2" fill="#2d2d2d"/><rect x="14" y="30" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="23" y="30" width="7" height="12" rx="2" fill="#2d2d2d"/>`,
+  arms:  `<circle cx="22" cy="8" r="5" fill="#2d2d2d"/><rect x="20" y="13" width="4" height="3" fill="#2d2d2d"/><rect x="14" y="16" width="16" height="14" rx="2" fill="#2d2d2d"/><rect x="7" y="16" width="7" height="6" rx="2" fill="#2d2d2d"/><rect x="7" y="22" width="7" height="6" rx="2" fill="rgba(201,168,76,.8)"/><rect x="30" y="16" width="7" height="6" rx="2" fill="#2d2d2d"/><rect x="30" y="22" width="7" height="6" rx="2" fill="rgba(201,168,76,.8)"/><rect x="14" y="30" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="23" y="30" width="7" height="12" rx="2" fill="#2d2d2d"/>`,
+  core:  `<circle cx="22" cy="8" r="5" fill="#2d2d2d"/><rect x="20" y="13" width="4" height="3" fill="#2d2d2d"/><rect x="14" y="16" width="16" height="7" rx="2" fill="#2d2d2d"/><rect x="14" y="23" width="16" height="7" rx="2" fill="rgba(201,168,76,.8)"/><rect x="7" y="16" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="30" y="16" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="14" y="30" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="23" y="30" width="7" height="12" rx="2" fill="#2d2d2d"/>`,
+};
+function getExerciseIcon(name) {
+  const n = (name || '').toLowerCase();
+  let g = null;
+  if (/bryst|bench|chest|flyes|butterfly|push.?up|cable.?cross|pec/.test(n)) g = 'chest';
+  else if (/ryg|back|row|rodd|pull.?up|lat|chin.?up|pulldown|deadlift|dødløft|hyperext/.test(n)) g = 'back';
+  else if (/ben|leg|squat|knæbøj|lunge|udfall|hip.?(thrust|hinge)|hack|leg.?press|rdl|romanian|glute|step.?up/.test(n)) g = 'legs';
+  else if (/skulder|shoulder|lateral|raise|deltoid|military|ohp|overhead/.test(n)) g = 'shldr';
+  else if (/arm|bicep|curl|tricep|dip|hammer|preacher/.test(n)) g = 'arms';
+  else if (/core|mave|plank|crunch|sit.?up|oblique|rotation|russian/.test(n)) g = 'core';
+  if (!g) return '';
+  return `<svg width="44" height="44" viewBox="0 0 44 44" style="flex-shrink:0;border-radius:8px"><rect width="44" height="44" rx="8" fill="#1a1a1a"/>${_MI[g]}</svg>`;
+}
 
+async function loadTraining() {
+  const { week: thisWeek, year: thisYear } = getWeekYear();
   const prevWeek = thisWeek > 1 ? thisWeek - 1 : 52;
   const prevYear = thisWeek > 1 ? thisYear : thisYear - 1;
 
@@ -1867,8 +1893,10 @@ function renderTrainingDay(selectedDay) {
         <span class="set-inp-x">×</span>
         <input id="sr-${i}-${j}" class="set-inp" type="number" placeholder="reps" min="0" oninput="saveWKState()">
       </div>`).join('');
+    const exIcon = getExerciseIcon(ex.name);
     return `<div class="ex-card" id="exc-${i}">
       <div class="ex-num" id="exn-${i}">${i + 1}</div>
+      ${exIcon}
       <div class="ex-info">
         <div class="ex-nm">${ex.name}</div>
         <div class="ex-det">${ex.sets} sæt &times; ${ex.reps} reps &bull; ${ex.weight} &bull; Hvile: ${ex.rest}s</div>
@@ -1954,10 +1982,7 @@ async function endWorkout() {
     `Du fuldførte ${total} sæt fordelt på ${exDone} af ${WK.exercises.length} øvelser. Fantastisk indsats!`;
   document.getElementById('wk-modal').classList.remove('hidden');
 
-  const now2 = new Date();
-  const soy2 = new Date(now2.getFullYear(), 0, 1);
-  const week = Math.ceil(((now2 - soy2) / 86400000 + soy2.getDay() + 1) / 7);
-  const year = now2.getFullYear();
+  const { week, year } = getWeekYear();
 
   // Brug dato-baseret duplikat-tjek (localStorage) så klienter kan træne samme dag igen på en anden kalenderdag
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -2181,6 +2206,7 @@ async function fetchCheckins() {
 }
 
 async function loadCheckin() {
+  updateWeekInfo();
   await fetchCheckins();
   renderCheckinHistory();
   restoreCIDraft();
@@ -2196,7 +2222,7 @@ function renderCheckinHistory() {
     <div class="ci-history-item">
       <div class="ci-hi-top">
         <div class="ci-hi-week">Uge ${c.week_number}, ${c.year}</div>
-        <div class="ci-hi-weight">${c.weight} kg</div>
+        <div class="ci-hi-weight">${c.weight != null ? c.weight + ' kg' : '—'}</div>
       </div>
       <div class="ci-badges">
         <div class="ci-badge">Energi <span>${c.energy_level}/10</span></div>
@@ -2217,9 +2243,7 @@ async function submitCheckin() {
   if (!weight) { toast('Angiv venligst din vægt', 'err'); return; }
 
   const now = new Date();
-  const startOfYear = new Date(now.getFullYear(), 0, 1);
-  const week = Math.ceil(((now - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
-  const year = now.getFullYear();
+  const { week, year } = getWeekYear();
 
   const { data: existing } = await sb.from('checkins')
     .select('id').eq('user_id', S.user.id).eq('week_number', week).eq('year', year).maybeSingle();
@@ -2233,9 +2257,13 @@ async function submitCheckin() {
   });
   if (error) { toast('Fejl: ' + error.message, 'err'); return; }
 
-  await sb.from('weight_log').insert({
-    user_id: S.user.id, weight, date: now.toISOString().split('T')[0], notes: 'Fra ugentligt check-in'
-  });
+  const todayStr = now.toISOString().split('T')[0];
+  const { data: existWL } = await sb.from('weight_log').select('id').eq('user_id', S.user.id).eq('date', todayStr).maybeSingle();
+  if (existWL) {
+    await sb.from('weight_log').update({ weight, notes: 'Fra ugentligt check-in' }).eq('id', existWL.id);
+  } else {
+    await sb.from('weight_log').insert({ user_id: S.user.id, weight, date: todayStr, notes: 'Fra ugentligt check-in' });
+  }
 
   clearCIDraft();
   toast('Check-in sendt! Din coach ser det snart 🎉', 'ok');
@@ -2265,7 +2293,12 @@ async function loadPhotos() {
   const BUCKET = 'progress-photos';
   const uid = S.user.id;
   const { data: files, error } = await sb.storage.from(BUCKET).list(uid, { sortBy: { column: 'name', order: 'asc' } });
-  if (error || !files || files.length === 0) {
+  if (error) {
+    const isSetup = error.message?.includes('Bucket not found') || error.message?.includes('not found');
+    gallery.innerHTML = `<div style="color:var(--muted);font-size:.85rem">${isSetup ? 'Foto-upload er ikke aktiveret endnu – kontakt Hamza.' : 'Kunne ikke hente fotos.'}</div>`;
+    return;
+  }
+  if (!files || files.length === 0) {
     gallery.innerHTML = '<div style="color:var(--muted);font-size:.85rem">Ingen fotos endnu – upload dit første!</div>';
     return;
   }
@@ -2301,7 +2334,13 @@ async function submitPhoto() {
   btn.disabled = false;
   btn.textContent = 'Upload foto';
 
-  if (error) { toast('Fejl: ' + error.message, 'err'); return; }
+  if (error) {
+    const msg = error.message?.includes('Bucket not found') || error.message?.includes('not found')
+      ? 'Foto-upload er ikke sat op endnu – kontakt Hamza.'
+      : 'Upload fejlede: ' + error.message;
+    toast(msg, 'err');
+    return;
+  }
   toast('Foto uploadet! ✓', 'ok');
   fileInput.value = '';
   document.getElementById('photo-week').value = '';
