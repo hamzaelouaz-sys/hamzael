@@ -3,7 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Det Skarpe Liv | Klientportal</title>
+<title>Det Skarpe Liv | Online Coach – Kost & Træning</title>
+<meta name="description" content="Få personlig online coaching inden for kost og træning med Hamza El. Skræddersyede kostplaner og træningsprogrammer til dig der vil blive en bedre version af dig selv.">
+<meta name="keywords" content="online coach, kost og træning, personlig træner online, kostplan, træningsprogram, vægttab, muskelmasse, Danmark">
+<meta name="author" content="Hamza El – Det Skarpe Liv">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://detskarpeliv.dk">
+<!-- Open Graph (Facebook / Instagram link preview) -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://detskarpeliv.dk">
+<meta property="og:title" content="Det Skarpe Liv | Online Coach – Kost & Træning">
+<meta property="og:description" content="Personlig online coaching med fokus på kost og træning. Book en gratis samtale med Hamza El og kom i gang i dag.">
+<meta property="og:site_name" content="Det Skarpe Liv">
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Det Skarpe Liv | Online Coach – Kost & Træning">
+<meta name="twitter:description" content="Personlig online coaching med fokus på kost og træning. Book en gratis samtale med Hamza El og kom i gang i dag.">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
@@ -530,6 +545,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
           </div>
           <div class="stat-val" id="s-weight">—</div>
           <div class="stat-unit">kilogram</div>
+          <div id="s-weight-trend" class="hidden" style="font-size:.72rem;margin-top:5px;font-weight:600"></div>
         </div>
         <div class="stat-card">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -1507,6 +1523,19 @@ async function loadDashboard() {
 
   const lastLog = S.weightLog[0];
   document.getElementById('s-weight').textContent = lastLog?.weight ?? '—';
+  const trendEl = document.getElementById('s-weight-trend');
+  if (trendEl && S.weightLog.length >= 2) {
+    const sorted = [...S.weightLog].filter(w => w.weight != null).sort((a,b) => new Date(a.date)-new Date(b.date));
+    const firstW = sorted[0]?.weight;
+    const lastW = lastLog?.weight;
+    if (firstW && lastW) {
+      const diff = +(lastW - firstW).toFixed(1);
+      const sign = diff > 0 ? '+' : '';
+      trendEl.textContent = `${sign}${diff} kg siden start`;
+      trendEl.style.color = diff <= 0 ? 'var(--green)' : 'var(--red)';
+      trendEl.classList.remove('hidden');
+    }
+  }
   document.getElementById('s-checkins').textContent = S.checkins.length;
   const stepsEl = document.getElementById('s-steps');
   if (stepsEl) {
