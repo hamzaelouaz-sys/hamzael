@@ -2164,9 +2164,11 @@ async function logWeight() {
   if (!date) { toast('Vælg en dato', 'err'); return; }
   if (!weight && !steps && !sleep) { toast('Udfyld mindst ét felt', 'err'); return; }
 
-  const { data: existing } = await sb.from('weight_log')
+  const { data: existingArr } = await sb.from('weight_log')
     .select('id, weight, steps, sleep_hours, notes')
-    .eq('user_id', S.user.id).eq('date', date).maybeSingle();
+    .eq('user_id', S.user.id).eq('date', date)
+    .order('created_at', { ascending: false }).limit(1);
+  const existing = existingArr?.[0] ?? null;
 
   let error;
   if (existing) {
