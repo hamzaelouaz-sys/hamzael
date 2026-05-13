@@ -391,21 +391,6 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   .nav-item svg{width:20px;height:20px}
 }
 
-/* ─── GENERATOR ──────────────────────────────────────────────────────────── */
-.gen-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
-@media(max-width:700px){.gen-grid{grid-template-columns:1fr}}
-.gen-section{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:24px}
-.gen-section h3{font-size:.85rem;font-weight:700;color:var(--txt);margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--bdr);letter-spacing:.06em;text-transform:uppercase}
-.gen-output{background:var(--surf);border:1px solid var(--bdr-g);border-radius:var(--r2);padding:28px;margin-top:24px}
-.gen-plan-day{background:var(--surf2);border:1px solid var(--bdr);border-radius:var(--r);padding:18px;margin-bottom:12px}
-.gen-plan-day h4{font-size:.88rem;font-weight:700;color:var(--gold);margin-bottom:3px}
-.gen-plan-day .day-meta{font-size:.78rem;color:var(--muted);margin-bottom:12px}
-.gen-ex-row{display:flex;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--bdr);font-size:.83rem}
-.gen-ex-row:last-child{border-bottom:none}
-.gen-ex-name{font-weight:600;color:var(--txt);flex:1}
-.gen-ex-detail{color:var(--muted);font-size:.78rem;white-space:nowrap}
-.gen-api-row{display:flex;gap:10px;align-items:flex-end}
-.gen-api-row .input{flex:1;font-family:monospace;font-size:.8rem}
 </style>
 </head>
 <body>
@@ -563,10 +548,6 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         Beskeder
         <span class="nav-badge hidden" id="msg-badge"></span>
-      </div>
-      <div class="nav-item hidden" id="nav-gen" data-page="generator" onclick="navigate('generator')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.88 5.76a1 1 0 00.63.63L20.24 11l-5.76 1.88a1 1 0 00-.63.63L12 19.24l-1.88-5.76a1 1 0 00-.63-.63L3.76 11l5.76-1.88a1 1 0 00.63-.63L12 3z"/></svg>
-        Generator
       </div>
     </nav>
     <div class="sb-footer">
@@ -871,85 +852,6 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
     </div>
 
     <!-- BESKEDER -->
-    <!-- GENERATOR (Coach-only) -->
-    <div id="pg-generator" class="page-wrap fade-in hidden">
-      <div class="page-header">
-        <h2>Træningsplan Generator</h2>
-        <p>Generer AI-baseret træningsplan og gem den direkte til en klient</p>
-      </div>
-
-      <div class="gen-section" style="margin-bottom:20px">
-        <h3>API-nøgle</h3>
-        <div class="gen-api-row">
-          <input class="input" type="password" id="gen-api-key" placeholder="sk-ant-..." autocomplete="off">
-          <button class="btn btn-outline btn-sm" onclick="localStorage.setItem('claude_api_key',document.getElementById('gen-api-key').value);toast('Nøgle gemt','ok')">Gem</button>
-        </div>
-        <p style="color:var(--muted);font-size:.75rem;margin-top:8px">Claude API-nøgle — gemmes kun lokalt i din browser.</p>
-      </div>
-
-      <div class="gen-grid">
-        <div class="gen-section">
-          <h3>Klient & Plan</h3>
-          <div class="form-group">
-            <label class="label">Klient</label>
-            <select class="input" id="gen-client"></select>
-          </div>
-          <div class="form-group">
-            <label class="label">Træningsdage om ugen</label>
-            <select class="input" id="gen-days">
-              <option value="2">2 dage</option>
-              <option value="3">3 dage</option>
-              <option value="4" selected>4 dage</option>
-              <option value="5">5 dage</option>
-              <option value="6">6 dage</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="label">Træningsmål</label>
-            <select class="input" id="gen-goal">
-              <option>Muskelopbygning</option>
-              <option>Vægttab</option>
-              <option>Performance</option>
-              <option>Generel form</option>
-            </select>
-          </div>
-        </div>
-        <div class="gen-section">
-          <h3>Detaljer</h3>
-          <div class="form-group">
-            <label class="label">Udstyr</label>
-            <select class="input" id="gen-equipment">
-              <option>Fitnesscenter</option>
-              <option>Hjemmetræning</option>
-              <option>Begge</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="label">Niveau</label>
-            <select class="input" id="gen-level">
-              <option>Begynder</option>
-              <option selected>Øvet</option>
-              <option>Avanceret</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="label">Begrænsninger / noter (valgfri)</label>
-            <input class="input" type="text" id="gen-notes" placeholder="fx skulderskade, ingen squat...">
-          </div>
-        </div>
-      </div>
-
-      <button class="btn btn-gold" id="gen-btn" onclick="generatePlan()" style="min-width:240px">Generér træningsplan</button>
-
-      <div id="gen-output" class="gen-output hidden">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-          <h3 style="margin:0;font-family:var(--serif);font-size:1.3rem" id="gen-plan-name">Træningsplan</h3>
-          <button class="btn btn-gold btn-sm" id="gen-save-btn" onclick="savePlanToClient()">Gem til klient</button>
-        </div>
-        <div id="gen-plan-days"></div>
-      </div>
-    </div>
-
     <div id="pg-messages" class="page-wrap fade-in hidden">
       <div class="page-header">
         <h2>Beskeder</h2>
@@ -1384,7 +1286,6 @@ async function loadProfile() {
   S.profile = data || { full_name: displayName, status: 'pending' };
   document.getElementById('u-name').textContent = displayName;
   document.getElementById('u-avatar').textContent = displayName.charAt(0).toUpperCase();
-  if (S.user?.email === COACH_EMAIL) document.getElementById('nav-gen').classList.remove('hidden');
 }
 
 async function isOnboarded() {
@@ -1658,7 +1559,6 @@ async function loadPage(page) {
   if (page === 'checkin') await loadCheckin();
   if (page === 'photos') await loadPhotos();
   if (page === 'messages') await loadMessages();
-  if (page === 'generator') await loadGenerator();
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -2635,146 +2535,6 @@ function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// GENERATOR (Coach-only)
-// ════════════════════════════════════════════════════════════════════════════
-
-const COACH_EMAIL = 'hamzaelouaz@gmail.com';
-
-async function loadGenerator() {
-  const { data: clients } = await sb.from('profiles')
-    .select('id, full_name, email')
-    .eq('role', 'client')
-    .order('full_name');
-
-  const sel = document.getElementById('gen-client');
-  if (sel && clients) {
-    sel.innerHTML = '<option value="">Vælg klient...</option>' +
-      clients.map(c => `<option value="${c.id}">${escHtml(c.full_name || c.email)}</option>`).join('');
-  }
-
-  const saved = localStorage.getItem('claude_api_key');
-  if (saved) document.getElementById('gen-api-key').value = saved;
-}
-
-async function generatePlan() {
-  const apiKey = document.getElementById('gen-api-key').value.trim();
-  if (!apiKey) { toast('Indsæt din Claude API-nøgle', 'err'); return; }
-  localStorage.setItem('claude_api_key', apiKey);
-
-  const clientId = document.getElementById('gen-client').value;
-  if (!clientId) { toast('Vælg en klient', 'err'); return; }
-
-  const days      = document.getElementById('gen-days').value;
-  const goal      = document.getElementById('gen-goal').value;
-  const equipment = document.getElementById('gen-equipment').value;
-  const level     = document.getElementById('gen-level').value;
-  const notes     = document.getElementById('gen-notes').value.trim();
-
-  const btn = document.getElementById('gen-btn');
-  btn.disabled = true;
-  btn.textContent = 'Genererer...';
-
-  const systemPrompt = `Du er en ekspert i evidensbaseret styrketræning og hypertrofi. Design et ugentligt træningssplit.
-
-KRAV:
-- Maks 60 minutter pr. træningssession
-- Maks 6 øvelser pr. dag
-- Hver muskelgruppe rammes mindst 2x om ugen (MPS-vinduer)
-- Tunge compound-dage efterfølges af lettere isolation-dage (CNS-hensyn)
-- Systemisk træthed balanceres
-
-PRINCIPPER:
-- Øvelsesrækkefølge: Compound → Semi-isolation → Isolation (Jeff Nippard)
-- Volumen: MEV–MAV pr. muskelgruppe (Mike Israetel / Renaissance Periodization)
-- Intensitet: 2–3 RIR på arbejdssæt for hypertrofi (Eric Helms)
-- Progressiv overload er bærende princip
-
-Returner UDELUKKENDE gyldigt JSON uden markdown eller forklaring:
-{"workout":{"program_name":"...","days":[{"day":"Mandag","name":"Push – Bryst, Skulder, Triceps","exercises":[{"name":"Bænkpres","sets":4,"reps":"6-8","weight":"@2 RIR","rest":120}]}]}}
-
-Brug disse danske dagnavne: Mandag, Tirsdag, Onsdag, Torsdag, Fredag, Lørdag, Søndag. Kun træningsdage inkluderes. Max 6 øvelser pr. dag.`;
-
-  const userMsg = `Træningsmål: ${goal}\nTræningsdage om ugen: ${days}\nUdstyr: ${equipment}\nNiveau: ${level}${notes ? '\nBegrænsninger: ' + notes : ''}`;
-
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 2048,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userMsg }]
-      })
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || `API-fejl ${res.status}`);
-    }
-
-    const data = await res.json();
-    const text = data.content?.[0]?.text || '';
-    const jsonStr = text.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
-    const plan = JSON.parse(jsonStr);
-    if (!plan.workout?.days?.length) throw new Error('Ugyldig planstruktur fra AI');
-
-    window._genPlan = { plan, clientId };
-    renderGenPreview(plan);
-    document.getElementById('gen-output').classList.remove('hidden');
-    toast('Plan genereret!', 'ok');
-  } catch(e) {
-    toast('Fejl: ' + e.message, 'err');
-    console.error(e);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Generér træningsplan';
-  }
-}
-
-function renderGenPreview(plan) {
-  const wd = plan.workout;
-  document.getElementById('gen-plan-name').textContent = wd.program_name || 'Træningsplan';
-  document.getElementById('gen-plan-days').innerHTML = wd.days.map(day => `
-    <div class="gen-plan-day">
-      <h4>${escHtml(day.day)}</h4>
-      <div class="day-meta">${escHtml(day.name)}</div>
-      ${(day.exercises || []).map(ex => `
-        <div class="gen-ex-row">
-          <span class="gen-ex-name">${escHtml(ex.name)}</span>
-          <span class="gen-ex-detail">${ex.sets}×${ex.reps} · ${escHtml(ex.weight)} · ${ex.rest}s hvile</span>
-        </div>`).join('')}
-    </div>`).join('');
-}
-
-async function savePlanToClient() {
-  const { plan, clientId } = window._genPlan || {};
-  if (!plan || !clientId) { toast('Ingen plan at gemme', 'err'); return; }
-
-  const btn = document.getElementById('gen-save-btn');
-  btn.disabled = true;
-  btn.textContent = 'Gemmer...';
-
-  try {
-    const { error } = await sb.from('client_data').upsert(
-      { user_id: clientId, program: JSON.stringify(plan), updated_at: new Date().toISOString() },
-      { onConflict: 'user_id' }
-    );
-    if (error) throw error;
-    toast('Plan gemt til klienten! ✓', 'ok');
-  } catch(e) {
-    toast('Fejl ved gem: ' + e.message, 'err');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Gem til klient';
-  }
-}
 
 // ════════════════════════════════════════════════════════════════════════════
 // TOAST
