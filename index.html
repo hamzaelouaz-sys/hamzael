@@ -1898,26 +1898,6 @@ function toggleMeal(i) {
 // ════════════════════════════════════════════════════════════════════════════
 // TRAINING – muscle icons
 // ════════════════════════════════════════════════════════════════════════════
-const _MI = {
-  chest: `<circle cx="22" cy="8" r="5" fill="#2d2d2d"/><rect x="20" y="13" width="4" height="3" fill="#2d2d2d"/><rect x="14" y="16" width="16" height="14" rx="2" fill="#2d2d2d"/><rect x="7" y="16" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="30" y="16" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="14" y="30" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="23" y="30" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="14" y="16" width="16" height="8" rx="2" fill="rgba(201,168,76,.8)"/>`,
-  back:  `<circle cx="22" cy="8" r="5" fill="#2d2d2d"/><rect x="20" y="13" width="4" height="3" fill="#2d2d2d"/><rect x="14" y="16" width="16" height="14" rx="2" fill="#2d2d2d"/><rect x="7" y="16" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="30" y="16" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="14" y="30" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="23" y="30" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="14" y="16" width="16" height="14" rx="2" fill="rgba(201,168,76,.8)"/>`,
-  legs:  `<circle cx="22" cy="8" r="5" fill="#2d2d2d"/><rect x="20" y="13" width="4" height="3" fill="#2d2d2d"/><rect x="14" y="16" width="16" height="14" rx="2" fill="#2d2d2d"/><rect x="7" y="16" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="30" y="16" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="14" y="30" width="7" height="12" rx="2" fill="rgba(201,168,76,.8)"/><rect x="23" y="30" width="7" height="12" rx="2" fill="rgba(201,168,76,.8)"/>`,
-  shldr: `<circle cx="22" cy="8" r="5" fill="#2d2d2d"/><rect x="20" y="13" width="4" height="3" fill="#2d2d2d"/><rect x="14" y="16" width="16" height="14" rx="2" fill="#2d2d2d"/><rect x="7" y="16" width="7" height="6" rx="2" fill="rgba(201,168,76,.8)"/><rect x="30" y="16" width="7" height="6" rx="2" fill="rgba(201,168,76,.8)"/><rect x="7" y="22" width="7" height="6" rx="2" fill="#2d2d2d"/><rect x="30" y="22" width="7" height="6" rx="2" fill="#2d2d2d"/><rect x="14" y="30" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="23" y="30" width="7" height="12" rx="2" fill="#2d2d2d"/>`,
-  arms:  `<circle cx="22" cy="8" r="5" fill="#2d2d2d"/><rect x="20" y="13" width="4" height="3" fill="#2d2d2d"/><rect x="14" y="16" width="16" height="14" rx="2" fill="#2d2d2d"/><rect x="7" y="16" width="7" height="6" rx="2" fill="#2d2d2d"/><rect x="7" y="22" width="7" height="6" rx="2" fill="rgba(201,168,76,.8)"/><rect x="30" y="16" width="7" height="6" rx="2" fill="#2d2d2d"/><rect x="30" y="22" width="7" height="6" rx="2" fill="rgba(201,168,76,.8)"/><rect x="14" y="30" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="23" y="30" width="7" height="12" rx="2" fill="#2d2d2d"/>`,
-  core:  `<circle cx="22" cy="8" r="5" fill="#2d2d2d"/><rect x="20" y="13" width="4" height="3" fill="#2d2d2d"/><rect x="14" y="16" width="16" height="7" rx="2" fill="#2d2d2d"/><rect x="14" y="23" width="16" height="7" rx="2" fill="rgba(201,168,76,.8)"/><rect x="7" y="16" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="30" y="16" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="14" y="30" width="7" height="12" rx="2" fill="#2d2d2d"/><rect x="23" y="30" width="7" height="12" rx="2" fill="#2d2d2d"/>`,
-};
-function getExerciseIcon(name) {
-  const n = (name || '').toLowerCase();
-  let g = null;
-  if (/bryst|bench|chest|flyes|butterfly|push.?up|cable.?cross|pec/.test(n)) g = 'chest';
-  else if (/ryg|back|row|rodd|pull.?up|lat|chin.?up|pulldown|deadlift|dødløft|hyperext/.test(n)) g = 'back';
-  else if (/ben|leg|squat|knæbøj|lunge|udfall|hip.?(thrust|hinge)|hack|leg.?press|rdl|romanian|glute|step.?up/.test(n)) g = 'legs';
-  else if (/skulder|shoulder|lateral|raise|deltoid|military|ohp|overhead/.test(n)) g = 'shldr';
-  else if (/arm|bicep|curl|tricep|dip|hammer|preacher/.test(n)) g = 'arms';
-  else if (/core|mave|plank|crunch|sit.?up|oblique|rotation|russian/.test(n)) g = 'core';
-  if (!g) return '';
-  return `<svg width="44" height="44" viewBox="0 0 44 44" style="flex-shrink:0;border-radius:8px"><rect width="44" height="44" rx="8" fill="#1a1a1a"/>${_MI[g]}</svg>`;
-}
 
 async function loadTraining() {
   const { week: thisWeek, year: thisYear } = getWeekYear();
@@ -2060,10 +2040,8 @@ function renderTrainingDay(selectedDay) {
         <span class="set-inp-x">×</span>
         <input id="sr-${i}-${j}" class="set-inp" type="number" placeholder="reps" min="0" oninput="saveWKState()">
       </div>`).join('');
-    const exIcon = getExerciseIcon(ex.name);
     return `<div class="ex-card" id="exc-${i}">
       <div class="ex-num" id="exn-${i}">${i + 1}</div>
-      ${exIcon}
       <div class="ex-info">
         <div class="ex-nm">${ex.name}</div>
         <div class="ex-det">${ex.sets} sæt &times; ${ex.reps} reps &bull; ${ex.weight} &bull; Hvile: ${ex.rest}s</div>
