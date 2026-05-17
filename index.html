@@ -243,7 +243,16 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .ex-sdots{display:flex;gap:5px}
 .ex-sdot{width:9px;height:9px;border-radius:50%;background:var(--surf3);transition:background var(--trans)}
 .ex-sdot.done{background:var(--gold)}
+.ex-video-btn{background:none;border:1px solid rgba(255,70,70,.35);border-radius:6px;color:#ff6b6b;font-size:.72rem;font-weight:600;padding:4px 8px;cursor:pointer;white-space:nowrap;letter-spacing:.04em;flex-shrink:0;transition:all var(--trans)}
+.ex-video-btn:hover{background:rgba(255,70,70,.12);border-color:rgba(255,70,70,.7)}
 .workout-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+/* Video modal */
+.vid-modal-inner{background:var(--surf);border:1px solid var(--bdr-g);border-radius:16px;padding:20px;width:100%;max-width:700px;position:relative}
+.vid-close-btn{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--muted);font-size:1.6rem;cursor:pointer;line-height:1}
+.vid-close-btn:hover{color:var(--fg)}
+.vid-title{font-family:var(--serif);font-size:1.1rem;font-weight:600;margin-bottom:14px;color:var(--gold);padding-right:30px}
+.vid-frame-wrap{position:relative;padding-bottom:56.25%;height:0;border-radius:10px;overflow:hidden}
+.vid-frame-wrap iframe{position:absolute;inset:0;width:100%;height:100%}
 
 /* ===== PROGRESS ===== */
 .weight-form-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:24px;margin-bottom:22px}
@@ -933,6 +942,17 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- Video Modal -->
+<div class="modal-ov hidden" id="vid-modal" onclick="closeVidModal(event)">
+  <div class="vid-modal-inner" onclick="event.stopPropagation()">
+    <button class="vid-close-btn" onclick="document.getElementById('vid-iframe').src='';document.getElementById('vid-modal').classList.add('hidden')">&times;</button>
+    <div class="vid-title" id="vid-modal-title"></div>
+    <div class="vid-frame-wrap">
+      <iframe id="vid-iframe" src="" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+    </div>
   </div>
 </div>
 
@@ -2040,10 +2060,11 @@ function renderTrainingDay(selectedDay) {
         <span class="set-inp-x">×</span>
         <input id="sr-${i}-${j}" class="set-inp" type="number" placeholder="reps" min="0" oninput="saveWKState()">
       </div>`).join('');
+    const vidBtn = ex.video_url ? `<button class="ex-video-btn" onclick="openVidModal(event,'${ex.name.replace(/'/g,"\\'")}','${ex.video_url.replace(/'/g,"\\'")}')">▶ Se video</button>` : '';
     return `<div class="ex-card" id="exc-${i}">
       <div class="ex-num" id="exn-${i}">${i + 1}</div>
       <div class="ex-info">
-        <div class="ex-nm">${ex.name}</div>
+        <div class="ex-nm">${ex.name} ${vidBtn}</div>
         <div class="ex-det">${ex.sets} sæt &times; ${ex.reps} reps &bull; ${ex.weight} &bull; Hvile: ${ex.rest}s</div>
       </div>
       <div class="ex-sdots" id="esd-${i}">
@@ -2176,6 +2197,35 @@ function closeWkModal() {
   clearWKState();
   document.getElementById('wk-modal').classList.add('hidden');
   renderTraining();
+}
+
+function getYTEmbed(url) {
+  try {
+    const u = new URL(url);
+    let id = '';
+    if (u.hostname === 'youtu.be') id = u.pathname.slice(1);
+    else if (u.searchParams.has('v')) id = u.searchParams.get('v');
+    else {
+      const m = u.pathname.match(/\/embed\/([^/?]+)/);
+      if (m) id = m[1];
+    }
+    return id ? `https://www.youtube.com/embed/${id}?rel=0&autoplay=1` : null;
+  } catch(e) { return null; }
+}
+
+function openVidModal(evt, name, url) {
+  evt.stopPropagation();
+  const embed = getYTEmbed(url);
+  if (!embed) { window.open(url, '_blank'); return; }
+  document.getElementById('vid-modal-title').textContent = name;
+  document.getElementById('vid-iframe').src = embed;
+  document.getElementById('vid-modal').classList.remove('hidden');
+}
+
+function closeVidModal(evt) {
+  if (evt && evt.target !== document.getElementById('vid-modal')) return;
+  document.getElementById('vid-iframe').src = '';
+  document.getElementById('vid-modal').classList.add('hidden');
 }
 
 // ─── Rest Timer ─────────────────────────────────────────────────────────────
