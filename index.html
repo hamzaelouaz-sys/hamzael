@@ -1935,12 +1935,10 @@ async function loadTraining() {
       .order('created_at', { ascending: false }).limit(300)
   ]);
 
-  // Build lookup: exercise_name → last week's best set
+  // Build lookup: exercise_name → most recent logged set (this or last week)
   const prevLogs = {};
-  (slRes.data || []).filter(r => r.week_number === prevWeek && r.year === prevYear).forEach(r => {
-    if (!prevLogs[r.exercise_name] || r.weight_kg > prevLogs[r.exercise_name].weight_kg) {
-      prevLogs[r.exercise_name] = r;
-    }
+  (slRes.data || []).forEach(r => {
+    if (!prevLogs[r.exercise_name]) prevLogs[r.exercise_name] = r; // data er sorteret desc, første = nyeste
   });
   S.strengthLogs = prevLogs;
 
@@ -2052,7 +2050,7 @@ function renderTrainingDay(selectedDay) {
   const exs = day.exercises || [];
   document.getElementById('ex-list').innerHTML = exs.map((ex, i) => {
     const prev = S.strengthLogs?.[ex.name];
-    const prevHtml = prev ? `<div class="set-log-prev">Forrige uge: ${prev.weight_kg} kg × ${prev.reps} reps</div>` : '';
+    const prevHtml = prev ? `<div class="set-log-prev">Sidst: ${prev.weight_kg} kg × ${prev.reps} reps</div>` : '';
     const setInputs = Array.from({ length: ex.sets }, (_, j) => `
       <div class="set-log-row">
         <span class="set-log-lbl">Sæt ${j+1}</span>
