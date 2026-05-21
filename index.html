@@ -2187,14 +2187,17 @@ async function endWorkout() {
   });
   if (strengthRows.length > 0) {
     const { error: slErr } = await sb.from('strength_logs').insert(strengthRows);
-    if (slErr) console.error('[endWorkout] strength_logs insert fejl:', slErr);
+    if (slErr) {
+      console.error('[endWorkout] strength_logs insert fejl:', slErr);
+      toast('Fejl: dine løft kunne ikke gemmes. Kontakt din coach.', 'err');
+    }
   }
 }
 
 function closeWkModal() {
   clearWKState();
   document.getElementById('wk-modal').classList.add('hidden');
-  renderTraining();
+  loadTraining(); // genindlæs fra DB så "Sidst:"-hints opdateres
 }
 
 function getYTEmbed(url) {
