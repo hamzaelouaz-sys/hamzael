@@ -2142,13 +2142,10 @@ async function endWorkout() {
   document.getElementById('player-box').classList.add('hidden');
   const total = WK.setsDone.reduce((a, b) => a + b, 0);
   const exDone = WK.setsDone.filter((s, i) => s >= (WK.exercises[i]?.sets || 0)).length;
-  document.getElementById('wk-modal-txt').textContent =
-    `Du fuldførte ${total} sæt fordelt på ${exDone} af ${WK.exercises.length} øvelser. Fantastisk indsats!`;
-  document.getElementById('wk-modal').classList.remove('hidden');
 
   const { week, year } = getWeekYear();
 
-  // Brug dato-baseret duplikat-tjek (localStorage) så klienter kan træne samme dag igen på en anden kalenderdag
+  // Gem completion
   const todayStr = new Date().toISOString().slice(0, 10);
   const compKey = `wk_comp_${S.user.id}_${todayStr}_${currentTrainingDay}`;
   const alreadyDoneToday = localStorage.getItem(compKey);
@@ -2192,6 +2189,11 @@ async function endWorkout() {
       toast('Fejl: dine løft kunne ikke gemmes. Kontakt din coach.', 'err');
     }
   }
+
+  // Vis modal EFTER data er gemt
+  document.getElementById('wk-modal-txt').textContent =
+    `Du fuldførte ${total} sæt fordelt på ${exDone} af ${WK.exercises.length} øvelser. Fantastisk indsats!`;
+  document.getElementById('wk-modal').classList.remove('hidden');
 }
 
 function closeWkModal() {
