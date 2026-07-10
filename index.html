@@ -400,6 +400,65 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   .nav-item svg{width:20px;height:20px}
 }
 
+/* ===== BOTTOM NAV (mobil) ===== */
+#bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:64px;background:rgba(10,10,10,.95);border-top:1px solid var(--bdr-g);z-index:110;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--dim);font-size:.56rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:8px 4px;transition:color var(--trans);position:relative;border:none;background:none}
+.bn-item svg{width:22px;height:22px;flex-shrink:0}
+.bn-item.active{color:var(--gold)}
+.bn-item.active svg{opacity:1}
+.bn-badge{position:absolute;top:6px;right:calc(50% - 16px);background:var(--gold);color:#0a0a0a;border-radius:10px;font-size:.52rem;font-weight:800;padding:1px 5px;min-width:14px;text-align:center;line-height:1.5}
+
+@media(max-width:768px){
+  #bottom-nav{display:flex}
+  #main{padding-bottom:64px}
+  .page-wrap{padding:16px 14px 80px}
+  .toast{bottom:80px;right:14px;left:14px;text-align:center}
+  .set-inp{width:80px;padding:10px;font-size:.95rem}
+  .set-log-row{gap:10px;margin-bottom:10px}
+  .ex-card{flex-wrap:wrap;gap:10px;padding:16px}
+  .ex-sdots{width:100%;order:3}
+  .modal-box{padding:32px 22px}
+  .anatomy-section{flex-direction:column}
+  .anatomy-views{flex-direction:row;justify-content:center;width:100%}
+  .anatomy-legend{width:100%}
+}
+
+/* ===== MUSKEL ANATOMI ===== */
+.anatomy-section{display:flex;gap:20px;align-items:flex-start;background:var(--surf);border:1px solid var(--bdr-g);border-radius:var(--r2);padding:22px 20px;margin-bottom:20px;position:relative;overflow:hidden}
+.anatomy-section::before{content:"";position:absolute;top:0;right:0;width:220px;height:220px;background:radial-gradient(circle,rgba(201,169,97,.05),transparent 65%);pointer-events:none}
+.anatomy-views{display:flex;gap:16px;align-items:flex-end;flex-shrink:0}
+.anatomy-view-wrap{text-align:center}
+.anatomy-view-lbl{font-size:.58rem;color:var(--dim);font-weight:700;letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px}
+.anatomy-svg{width:80px;height:auto;display:block;margin:0 auto}
+.anatomy-svg .ms{fill:var(--surf3);stroke:rgba(255,255,255,.05);stroke-width:.5;transition:fill .35s ease,stroke .35s ease,filter .35s ease}
+.anatomy-svg .ms-skin{fill:var(--surf2);stroke:rgba(255,255,255,.04);stroke-width:.4}
+.anatomy-svg .ms-primary{fill:rgba(201,169,97,.62)!important;stroke:var(--gold)!important;stroke-width:1!important;filter:drop-shadow(0 0 4px rgba(201,169,97,.35))}
+.anatomy-svg .ms-secondary{fill:rgba(201,169,97,.18)!important;stroke:rgba(201,169,97,.45)!important;stroke-width:.6!important}
+.anatomy-legend{flex:1;min-width:0}
+.anatomy-legend h4{font-family:var(--serif);font-size:1.05rem;font-weight:600;margin-bottom:12px;letter-spacing:-.01em}
+.anatomy-no-workout{color:var(--dim);font-size:.84rem;font-style:italic}
+.anatomy-lbl-row{font-size:.6rem;color:var(--dim);font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px;margin-top:12px}
+.anatomy-lbl-row:first-child{margin-top:0}
+.muscle-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px}
+.muscle-tag{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:.73rem;font-weight:600;letter-spacing:.02em}
+.muscle-tag.primary{background:rgba(201,169,97,.14);border:1px solid rgba(201,169,97,.35);color:var(--gold)}
+.muscle-tag.secondary{background:rgba(201,169,97,.05);border:1px solid rgba(201,169,97,.16);color:var(--muted)}
+.mt-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.mt-dot.primary{background:var(--gold);box-shadow:0 0 5px rgba(201,169,97,.7)}
+.mt-dot.secondary{background:rgba(201,169,97,.4)}
+
+/* ===== MIKRONÆRINGSSTOFFER ===== */
+.micro-panel{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:24px;margin-top:14px}
+.micro-panel-title{font-size:.66rem;color:var(--muted);font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin-bottom:18px}
+.micro-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.micro-lbl{width:110px;font-size:.8rem;font-weight:600;flex-shrink:0;color:var(--txt)}
+.micro-bar-wrap{flex:1;height:5px;background:var(--surf3);border-radius:3px;overflow:hidden}
+.micro-bar-fill{height:100%;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.micro-val{font-size:.75rem;font-weight:700;width:60px;text-align:right;flex-shrink:0;font-family:var(--serif)}
+.micro-bar-fill.ok{background:var(--green)}
+.micro-bar-fill.mid{background:var(--gold)}
+.micro-bar-fill.low{background:var(--red)}
+
 </style>
 </head>
 <body>
@@ -680,6 +739,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
         <div class="diet-macros-row" id="diet-macro-badges"></div>
       </div>
       <div id="meal-list"></div>
+      <div id="micro-panel" class="hidden"></div>
     </div>
 
     <!-- TRÆNING -->
@@ -722,6 +782,67 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
           <button class="btn btn-outline btn-sm" onclick="nextEx()">Næste &#8594;</button>
         </div>
       </div>
+      <!-- Muskel anatomi diagram -->
+      <div id="anatomy-section" class="anatomy-section hidden">
+        <div class="anatomy-views">
+          <div class="anatomy-view-wrap">
+            <div class="anatomy-view-lbl">Forside</div>
+            <svg class="anatomy-svg" viewBox="0 0 80 235" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="40" cy="13" rx="11" ry="12" class="ms ms-skin"/>
+              <rect x="36" y="24" width="8" height="9" rx="2" class="ms ms-skin"/>
+              <path d="M24 42 L37 25 L43 25 L56 42 L53 50 L40 46 L27 50Z" data-m="traps" class="ms"/>
+              <ellipse cx="17" cy="49" rx="8" ry="7" data-m="front-delts" class="ms"/>
+              <ellipse cx="63" cy="49" rx="8" ry="7" data-m="front-delts" class="ms"/>
+              <path d="M27 44 L40 41 L53 44 L52 73 Q40 80 28 73Z" data-m="chest" class="ms"/>
+              <path d="M9 51 Q16 47 21 51 L21 83 Q15 88 9 85Z" data-m="biceps" class="ms"/>
+              <path d="M59 51 Q64 47 71 51 L71 85 Q65 88 59 83Z" data-m="biceps" class="ms"/>
+              <rect x="10" y="83" width="10" height="33" rx="5" class="ms ms-skin"/>
+              <rect x="60" y="83" width="10" height="33" rx="5" class="ms ms-skin"/>
+              <rect x="33" y="75" width="6" height="6" rx="1.5" data-m="abs" class="ms"/>
+              <rect x="41" y="75" width="6" height="6" rx="1.5" data-m="abs" class="ms"/>
+              <rect x="33" y="84" width="6" height="6" rx="1.5" data-m="abs" class="ms"/>
+              <rect x="41" y="84" width="6" height="6" rx="1.5" data-m="abs" class="ms"/>
+              <rect x="33" y="93" width="6" height="6" rx="1.5" data-m="abs" class="ms"/>
+              <rect x="41" y="93" width="6" height="6" rx="1.5" data-m="abs" class="ms"/>
+              <path d="M28 73 L32 75 L31 107 L25 100 Q21 87 23 77Z" data-m="obliques" class="ms"/>
+              <path d="M52 73 L48 75 L49 107 L55 100 Q59 87 57 77Z" data-m="obliques" class="ms"/>
+              <path d="M25 100 Q40 110 55 100 L55 117 Q40 126 25 117Z" class="ms ms-skin"/>
+              <path d="M25 117 Q33 113 39 117 L40 178 Q33 184 25 178Z" data-m="quads" class="ms"/>
+              <path d="M41 117 Q47 113 55 117 L55 178 Q47 184 40 178Z" data-m="quads" class="ms"/>
+              <ellipse cx="32" cy="181" rx="6" ry="5" class="ms ms-skin"/>
+              <ellipse cx="48" cy="181" rx="6" ry="5" class="ms ms-skin"/>
+              <path d="M26 185 Q32 181 38 185 L38 222 Q32 227 26 222Z" data-m="calves" class="ms"/>
+              <path d="M42 185 Q48 181 54 185 L54 222 Q48 227 42 222Z" data-m="calves" class="ms"/>
+            </svg>
+          </div>
+          <div class="anatomy-view-wrap">
+            <div class="anatomy-view-lbl">Bagside</div>
+            <svg class="anatomy-svg" viewBox="0 0 80 235" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="40" cy="13" rx="11" ry="12" class="ms ms-skin"/>
+              <rect x="36" y="24" width="8" height="9" rx="2" class="ms ms-skin"/>
+              <path d="M23 42 L37 25 L43 25 L57 42 L55 70 L40 64 L25 70Z" data-m="traps" class="ms"/>
+              <ellipse cx="17" cy="49" rx="8" ry="7" data-m="rear-delts" class="ms"/>
+              <ellipse cx="63" cy="49" rx="8" ry="7" data-m="rear-delts" class="ms"/>
+              <path d="M25 70 L40 64 L55 70 L54 107 Q47 114 40 112 Q33 114 26 107Z" data-m="lats" class="ms"/>
+              <path d="M9 51 Q16 47 21 51 L21 86 Q15 91 9 88Z" data-m="triceps" class="ms"/>
+              <path d="M59 51 Q64 47 71 51 L71 88 Q65 91 59 86Z" data-m="triceps" class="ms"/>
+              <rect x="10" y="86" width="10" height="33" rx="5" class="ms ms-skin"/>
+              <rect x="60" y="86" width="10" height="33" rx="5" class="ms ms-skin"/>
+              <ellipse cx="40" cy="104" rx="11" ry="10" data-m="lower-back" class="ms"/>
+              <path d="M26 112 Q40 108 54 112 L54 136 Q40 144 26 136Z" data-m="glutes" class="ms"/>
+              <path d="M26 136 Q33 132 39 136 L40 190 Q33 196 26 190Z" data-m="hamstrings" class="ms"/>
+              <path d="M41 136 Q47 132 54 136 L54 190 Q47 196 40 190Z" data-m="hamstrings" class="ms"/>
+              <path d="M26 193 Q32 189 38 193 L38 225 Q32 229 26 225Z" data-m="calves" class="ms"/>
+              <path d="M42 193 Q48 189 54 193 L54 225 Q48 229 42 225Z" data-m="calves" class="ms"/>
+            </svg>
+          </div>
+        </div>
+        <div class="anatomy-legend">
+          <h4>Aktiverede muskler</h4>
+          <div id="muscle-legend-content"><div class="anatomy-no-workout">Vælg en træningsdag</div></div>
+        </div>
+      </div>
+
       <div class="ex-list" id="ex-list"></div>
       <div class="workout-actions">
         <button class="btn btn-gold btn-lg" id="btn-start-wk" onclick="startWorkout()">&#9654; Start træning</button>
@@ -1906,6 +2027,7 @@ async function loadDiet() {
           </div>` : ''}
       </div>
     </div>`).join('');
+  renderMicroPanel(d.meals);
 }
 
 function toggleMeal(i) {
@@ -2051,6 +2173,8 @@ function renderTrainingDay(selectedDay) {
       </div>` : ''}`;
     document.getElementById('btn-start-wk').classList.add('hidden');
     document.getElementById('btn-end-wk').classList.add('hidden');
+    const anat = document.getElementById('anatomy-section');
+    if (anat) { anat.classList.remove('hidden'); updateMuscleMap([]); }
     return;
   }
 
@@ -2089,6 +2213,8 @@ function renderTrainingDay(selectedDay) {
   document.getElementById('btn-start-wk').classList.remove('hidden');
   document.getElementById('btn-end-wk').classList.add('hidden');
   restoreWKState(selectedDay);
+  const anat = document.getElementById('anatomy-section');
+  if (anat) { anat.classList.remove('hidden'); updateMuscleMap(exs); }
 }
 
 function startWorkout() {
@@ -2799,16 +2925,185 @@ function notifyCoachByEmail(content) {
 }
 
 function updateMsgBadge(count) {
-  const badge = document.getElementById('msg-badge');
-  if (!badge) return;
-  if (count > 0) { badge.textContent = count; badge.classList.remove('hidden'); }
-  else badge.classList.add('hidden');
+  ['msg-badge', 'bn-msg-badge'].forEach(id => {
+    const badge = document.getElementById(id);
+    if (!badge) return;
+    if (count > 0) { badge.textContent = count > 9 ? '9+' : count; badge.classList.remove('hidden'); }
+    else badge.classList.add('hidden');
+  });
 }
 
 function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+
+// ════════════════════════════════════════════════════════════════════════════
+// MUSKEL ANATOMI
+// ════════════════════════════════════════════════════════════════════════════
+const MUSCLE_GROUPS_MAP = {
+  'Chest':     { primary: ['chest'],              secondary: ['front-delts','triceps'] },
+  'Back':      { primary: ['lats','traps'],        secondary: ['rear-delts','biceps','lower-back'] },
+  'Shoulders': { primary: ['front-delts','rear-delts'], secondary: ['traps'] },
+  'Biceps':    { primary: ['biceps'],              secondary: ['front-delts'] },
+  'Triceps':   { primary: ['triceps'],             secondary: ['chest'] },
+  'Legs':      { primary: ['quads','hamstrings','glutes'], secondary: ['calves','lower-back'] },
+  'Core':      { primary: ['abs','obliques'],      secondary: ['lower-back'] },
+  'Cardio':    { primary: ['quads','calves'],      secondary: ['hamstrings','glutes','abs'] },
+};
+const MUSCLE_DA = {
+  'chest':'Bryst','front-delts':'Forreste skulder','rear-delts':'Bagerste skulder',
+  'traps':'Trapezius','lats':'Lats / Ryg','biceps':'Biceps','triceps':'Triceps',
+  'abs':'Mavemuskulatur','obliques':'Sideskrå','lower-back':'Lænde',
+  'quads':'Forlår','hamstrings':'Baglår','glutes':'Baller','calves':'Lægge',
+};
+
+function getExerciseMuscleGroup(name) {
+  const n = (name || '').toLowerCase();
+  if (/romanian deadlift|single leg romanian/.test(n)) return 'Legs';
+  if (/upright row/.test(n)) return 'Shoulders';
+  if (/bench press|dumbbell fl|cable fl|pec deck|push.?up|dips.*chest|landmine/.test(n)) return 'Chest';
+  if (/deadlift|pull.?up|chin.?up|barbell row|pendlay|one.arm.*row|cable row|lat pull|t.bar row|chest supported|inverted row|back ext|good morning|pullover|face pull|straight arm/.test(n)) return 'Back';
+  if (/overhead press|shoulder press|arnold|lateral raise|front raise|rear delt|bent over.*raise|plate front/.test(n)) return 'Shoulders';
+  if (/curl/.test(n) && !/leg curl/.test(n)) return 'Biceps';
+  if (/skull crusher|pushdown|tricep|dips.*tri|diamond push|overhead.*ext|jm press|tate press|kickback/.test(n)) return 'Triceps';
+  if (/squat|lunge|leg press|leg curl|leg extension|hip thrust|glute|calf|nordic|step.?up|box jump|hack squat/.test(n)) return 'Legs';
+  if (/plank|crunch|ab wheel|russian twist|leg raise|dead bug|bird dog|mountain climb|hollow|dragon flag|pallof|woodchop|suitcase/.test(n)) return 'Core';
+  if (/sprint|jump rope|battle rope|sled push|farmer|burpee|kettlebell swing|rowing machine|assault bike|turkish get|stair climb|jump squat/.test(n)) return 'Cardio';
+  return null;
+}
+
+function updateMuscleMap(exercises) {
+  const primary = new Set();
+  const secondary = new Set();
+  (exercises || []).forEach(ex => {
+    const g = getExerciseMuscleGroup(ex.name);
+    const mg = MUSCLE_GROUPS_MAP[g];
+    if (!mg) return;
+    mg.primary.forEach(m => primary.add(m));
+    mg.secondary.forEach(m => { if (!primary.has(m)) secondary.add(m); });
+  });
+  primary.forEach(m => secondary.delete(m));
+
+  document.querySelectorAll('.anatomy-svg [data-m]').forEach(el => {
+    el.className.baseVal = el.className.baseVal.replace(/\s*(ms-primary|ms-secondary)/g, '').trim();
+  });
+  primary.forEach(m => {
+    document.querySelectorAll(`.anatomy-svg [data-m="${m}"]`).forEach(el => {
+      el.className.baseVal += ' ms-primary';
+    });
+  });
+  secondary.forEach(m => {
+    document.querySelectorAll(`.anatomy-svg [data-m="${m}"]`).forEach(el => {
+      if (!el.className.baseVal.includes('ms-primary')) el.className.baseVal += ' ms-secondary';
+    });
+  });
+
+  const legend = document.getElementById('muscle-legend-content');
+  if (!legend) return;
+  if (primary.size === 0) {
+    legend.innerHTML = '<div class="anatomy-no-workout">Hviledag – ingen aktive muskler</div>';
+    return;
+  }
+  const priArr = [...primary].map(m => MUSCLE_DA[m] || m);
+  const secArr = [...secondary].map(m => MUSCLE_DA[m] || m);
+  legend.innerHTML =
+    (priArr.length ? `<div class="anatomy-lbl-row">Primære</div><div class="muscle-tags">${priArr.map(n => `<span class="muscle-tag primary"><span class="mt-dot primary"></span>${n}</span>`).join('')}</div>` : '') +
+    (secArr.length ? `<div class="anatomy-lbl-row">Sekundære</div><div class="muscle-tags">${secArr.map(n => `<span class="muscle-tag secondary"><span class="mt-dot secondary"></span>${n}</span>`).join('')}</div>` : '');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// MIKRONÆRINGSSTOFFER
+// ════════════════════════════════════════════════════════════════════════════
+// [fiber(g), vitC(mg), ca(mg), fe(mg), zn(mg)] per 100g
+const MICRO_BANK = {
+  'Kyllingebryst (kogt)':[0,0,12,0.9,1.0],'Kyllingelår (kogt)':[0,0,12,1.1,2.0],
+  'Kyllingefilet (bagt)':[0,0,11,0.8,0.9],'Kalkun bryst (kogt)':[0,0,11,1.0,1.8],
+  'Kalkun (hakket)':[0,0,12,1.2,2.2],'Oksemørbrad (stegt)':[0,0,14,2.5,4.8],
+  'Oksekød hakket 10%':[0,0,11,2.2,4.5],'Oksekød hakket 5%':[0,0,12,2.4,4.8],
+  'Okse ribeye (stegt)':[0,0,10,2.1,5.4],'Okse inderlår (stegt)':[0,0,10,2.8,5.2],
+  'Svinekød (filet)':[0,0,10,1.0,2.0],'Svinemørbrad (stegt)':[0,0,12,1.1,2.3],
+  'Laks (fersk)':[0,0,13,0.4,0.5],'Laks (dåse)':[0,0,15,0.5,0.5],
+  'Tun (dåse, vand)':[0,0,12,0.6,0.6],'Torsk (filet)':[0,0,16,0.4,0.4],
+  'Makrel (dåse)':[0,0,16,1.6,0.9],'Sardiner (dåse)':[0,0,382,2.9,1.3],
+  'Rejer (kogt)':[0,0,64,0.5,1.1],'Æg (helt)':[0,0,56,1.8,1.3],
+  'Æggehvide':[0,0,7,0.1,0.0],'Skyr (naturel)':[0,0,135,0.0,0.5],
+  'Hytteost':[0,0,83,0.1,0.4],'Græksk yoghurt 0%':[0,0,110,0.1,0.5],
+  'Græksk yoghurt 2%':[0,0,115,0.1,0.5],'Proteinpulver (valle)':[0,0,600,0.5,2.5],
+  'Havregryn':[10,0,54,4.3,3.6],'Havregrød (lavet med vand)':[2,0,11,0.9,0.7],
+  'Havreklid':[17,0,73,6.6,3.1],'Hvid ris (kogt)':[0.4,0,10,0.2,0.5],
+  'Brun ris (kogt)':[1.8,0,10,0.5,0.6],'Quinoa (kogt)':[2.8,0,17,1.5,1.1],
+  'Bulgur (kogt)':[4.5,0,10,1.0,0.5],'Fuldkornsbrød':[6.0,0,30,2.5,1.5],
+  'Rugbrød':[6.5,0,24,2.0,1.3],'Pasta (kogt)':[1.8,0,7,0.5,0.5],
+  'Fuldkornspasta (kogt)':[3.5,0,18,1.3,0.8],'Kartofler (kogt)':[1.8,9,8,0.4,0.3],
+  'Søde kartofler (kogt)':[3.0,17,30,0.7,0.3],'Æble':[2.4,4,6,0.1,0.0],
+  'Banan':[2.6,9,5,0.3,0.2],'Orange':[2.4,53,40,0.1,0.1],
+  'Jordbær':[2.0,59,16,0.4,0.1],'Blåbær':[2.4,10,6,0.3,0.2],
+  'Hindbær':[6.5,26,25,0.7,0.4],'Kiwi':[3.0,93,34,0.3,0.1],
+  'Mango':[1.6,36,11,0.2,0.1],'Broccoli':[2.6,89,47,0.7,0.4],
+  'Spinat':[2.2,28,99,2.7,0.5],'Babyspinat':[2.2,28,99,2.7,0.5],
+  'Blomkål':[2.5,48,22,0.4,0.3],'Asparges':[2.1,5,24,2.1,0.5],
+  'Rød peberfrugt':[2.1,128,7,0.4,0.3],'Grønkål':[3.6,82,135,1.5,0.4],
+  'Rosenkål':[3.8,85,42,1.4,0.4],'Gulerødder':[2.8,6,33,0.3,0.2],
+  'Tomater':[1.2,14,10,0.3,0.2],'Agurk':[0.5,3,16,0.3,0.2],
+  'Avocado':[6.7,10,12,0.6,0.6],'Kikærter (kogt)':[7.6,2,49,2.9,1.5],
+  'Røde linser (kogt)':[7.9,2,19,3.3,1.3],'Grønne linser (kogt)':[7.9,2,19,3.3,1.3],
+  'Hvide bønner (kogt)':[6.3,0,70,3.7,1.0],'Sorte bønner (kogt)':[8.7,0,27,2.1,1.0],
+  'Edamame (kogt)':[5.2,6,63,2.3,1.4],'Tofu (fast)':[0.3,0,350,5.4,0.8],
+  'Mandler':[12.5,0,264,3.7,3.1],'Valnødder':[6.7,1,98,2.9,3.1],
+  'Chiafrø':[34.4,1,631,7.7,4.6],'Hørfrø':[27.3,1,255,5.7,4.3],
+  'Græskarkerner':[6.0,1,46,8.8,7.6],'Solsikkefrø':[8.6,1,78,5.3,5.0],
+  'Sødmælk 3.5%':[0,1,120,0.1,0.4],'Minimælk 1.5%':[0,1,120,0.1,0.4],
+  'Ost (gouda)':[0,0,700,0.2,3.9],'Ost mager 17%':[0,0,660,0.3,3.5],
+  'Feta':[0,0,360,0.7,1.4],'Mozzarella':[0,0,505,0.2,2.9],
+  'Parmesan (revet)':[0,0,1180,0.9,4.0],'Hummus':[6.0,3,38,2.4,1.4],
+  'Jordnøddesmør':[6.0,0,49,1.9,2.8],'Honning':[0.2,0,6,0.4,0.2],
+  'Sojasauce':[0.1,0,18,2.8,0.5],'Edamame (kogt)':[5.2,6,63,2.3,1.4],
+};
+
+function calcMicros(meals) {
+  const totals = { fiber:0, vitC:0, ca:0, fe:0, zn:0 };
+  (meals || []).forEach(meal => {
+    (meal.items || []).forEach(it => {
+      const m = MICRO_BANK[it.name];
+      if (!m) return;
+      const scale = (it.gram || 0) / 100;
+      totals.fiber += m[0] * scale;
+      totals.vitC  += m[1] * scale;
+      totals.ca    += m[2] * scale;
+      totals.fe    += m[3] * scale;
+      totals.zn    += m[4] * scale;
+    });
+  });
+  return totals;
+}
+
+function renderMicroPanel(meals) {
+  const panel = document.getElementById('micro-panel');
+  if (!panel) return;
+  const t = calcMicros(meals);
+  const rows = [
+    { key:'fiber', lbl:'Fiber',       val:t.fiber, ref:30,   unit:'g',  dec:1 },
+    { key:'vitC',  lbl:'Vitamin C',   val:t.vitC,  ref:80,   unit:'mg', dec:0 },
+    { key:'ca',    lbl:'Calcium',     val:t.ca,    ref:1000, unit:'mg', dec:0 },
+    { key:'fe',    lbl:'Jern',        val:t.fe,    ref:15,   unit:'mg', dec:1 },
+    { key:'zn',    lbl:'Zink',        val:t.zn,    ref:10,   unit:'mg', dec:1 },
+  ];
+  panel.className = 'micro-panel';
+  panel.innerHTML = `
+    <div class="micro-panel-title">Mikronæringsstoffer (dagligt estimat)</div>
+    ${rows.map(r => {
+      const pct = Math.min(100, Math.round(r.val / r.ref * 100));
+      const cls = pct >= 75 ? 'ok' : pct >= 40 ? 'mid' : 'low';
+      const valStr = r.val.toFixed(r.dec) + r.unit;
+      return `<div class="micro-row">
+        <div class="micro-lbl">${r.lbl}</div>
+        <div class="micro-bar-wrap"><div class="micro-bar-fill ${cls}" style="width:${pct}%"></div></div>
+        <div class="micro-val" style="color:var(--${cls==='ok'?'green':cls==='mid'?'gold':'red'})">${valStr}</div>
+      </div>`;
+    }).join('')}
+    <div style="font-size:.68rem;color:var(--dim);margin-top:10px">Estimat baseret på anbefalede daglige værdier. Data er vejledende.</div>`;
+}
 
 // ════════════════════════════════════════════════════════════════════════════
 // TOAST
@@ -2822,5 +3117,29 @@ function toast(msg, type = 'ok') {
 }
 
 </script>
+<!-- Bottom nav – kun synlig på mobil -->
+<div id="bottom-nav">
+  <button class="bn-item nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Oversigt
+  </button>
+  <button class="bn-item nav-item" data-page="diet" onclick="navigate('diet')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+    Kost
+  </button>
+  <button class="bn-item nav-item" data-page="training" onclick="navigate('training')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+    Træning
+  </button>
+  <button class="bn-item nav-item" data-page="checkin" onclick="navigate('checkin')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    Check-in
+  </button>
+  <button class="bn-item nav-item" data-page="messages" onclick="navigate('messages')" style="position:relative">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    Beskeder
+    <span id="bn-msg-badge" class="bn-badge hidden"></span>
+  </button>
+</div>
 </body>
 </html>
