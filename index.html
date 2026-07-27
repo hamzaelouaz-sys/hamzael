@@ -655,6 +655,16 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
         <h2 id="dash-greeting">God dag!</h2>
         <p id="dash-subtitle" style="color:var(--muted);font-size:.9rem;margin-top:4px">Her er din oversigt for i dag</p>
       </div>
+      <!-- Daglig vejnings-påmindelse: vises hvis der ikke er logget en vægt i dag -->
+      <div id="weigh-reminder" class="hidden" onclick="navigate('progress')"
+           style="cursor:pointer;display:flex;align-items:center;gap:14px;padding:16px 20px;margin-bottom:22px;border-radius:var(--r2);background:linear-gradient(90deg,rgba(201,168,76,.16),rgba(201,168,76,.05));border:1px solid var(--bdr-g)">
+        <div style="width:42px;height:42px;border-radius:12px;background:rgba(201,168,76,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.3rem">⚖️</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;color:var(--gold);font-size:.95rem;margin-bottom:2px">Husk din daglige vejning</div>
+          <div id="weigh-reminder-sub" style="color:var(--muted);font-size:.82rem">Vej dig hver morgen efter toiletbesøg, før du spiser og drikker. Tryk her for at logge.</div>
+        </div>
+        <div style="color:var(--gold);font-size:1.2rem;flex-shrink:0">→</div>
+      </div>
       <div class="stats-row">
         <div class="stat-card card-g">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -857,7 +867,8 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
         <p>Log din dag og følg din udvikling over tid</p>
       </div>
       <div class="weight-form-card">
-        <h3>Log en dag <span style="font-size:.75rem;font-weight:400;color:var(--muted);margin-left:6px">← skift dato for at logge en glem dag</span></h3>
+        <h3>Log en dag <span style="font-size:.75rem;font-weight:400;color:var(--muted);margin-left:6px">← skift dato for at logge en glemt dag</span></h3>
+        <p style="margin:-8px 0 18px;color:var(--muted);font-size:.84rem;line-height:1.5">⚖️ <strong style="color:var(--gold)">Vej dig hver morgen</strong> — efter toiletbesøg og før du spiser eller drikker. Daglige vejninger giver din coach det bedste billede af din fremgang (din vægt svinger naturligt fra dag til dag).</p>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;align-items:end">
           <div class="form-group" style="margin-bottom:0">
             <label class="label">Dato</label>
@@ -1802,6 +1813,14 @@ async function loadDashboard() {
 
   const lastLog = S.weightLog[0];
   document.getElementById('s-weight').textContent = lastLog?.weight ?? '—';
+
+  // Daglig vejnings-påmindelse: vis banner hvis der IKKE er logget en vægt i dag
+  const reminderEl = document.getElementById('weigh-reminder');
+  if (reminderEl) {
+    const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const weighedToday = S.weightLog.some(w => w.weight != null && String(w.date).slice(0, 10) === todayStr);
+    reminderEl.classList.toggle('hidden', weighedToday);
+  }
   const trendEl = document.getElementById('s-weight-trend');
   if (trendEl && S.weightLog.length >= 2) {
     const sorted = [...S.weightLog].filter(w => w.weight != null).sort((a,b) => new Date(a.date)-new Date(b.date));
