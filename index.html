@@ -740,6 +740,8 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 
     <!-- KOSTPLAN -->
     <div id="pg-diet" class="page-wrap fade-in hidden">
+      <!-- Banner der vises tydeligt når coachen har ændret makromålene -->
+      <div id="macro-update-banner" class="hidden" style="margin-bottom:20px;padding:18px 20px;border-radius:var(--r2);background:linear-gradient(90deg,rgba(201,168,76,.20),rgba(201,168,76,.06));border:1px solid var(--gold)"></div>
       <div class="diet-hero">
         <div>
           <div class="badge gold" style="margin-bottom:10px">Din kostplan</div>
@@ -1982,6 +1984,55 @@ async function fetchDiet() {
   }
 }
 
+// Sammenligner klientens nuværende makromål med dem, de sidst har set (gemt
+// i localStorage pr. bruger). Viser et tydeligt banner + returnerer hvilke
+// makroer der er ændret, så badges kan fremhæves.
+function checkMacroChanges(d) {
+  const banner = document.getElementById('macro-update-banner');
+  if (!banner || !S.user) return {};
+  const key = 'dsl_macros_' + S.user.id;
+  const cur = { calories: +d.calories||0, protein: +d.protein||0, carbs: +d.carbs||0, fat: +d.fat||0 };
+  let prev = null;
+  try { prev = JSON.parse(localStorage.getItem(key)); } catch(e) {}
+  // Første gang: gem lydløst, intet banner
+  if (!prev) { localStorage.setItem(key, JSON.stringify(cur)); banner.classList.add('hidden'); return {}; }
+  const labels = { calories:'Kalorier', protein:'Protein', carbs:'Kulhydrat', fat:'Fedt' };
+  const units  = { calories:' kcal', protein:'g', carbs:'g', fat:'g' };
+  const changed = {};
+  ['calories','protein','carbs','fat'].forEach(k => { if (+prev[k] !== +cur[k]) changed[k] = { from:+prev[k], to:+cur[k] }; });
+  if (!Object.keys(changed).length) { banner.classList.add('hidden'); return {}; }
+  const rows = Object.keys(changed).map(k => {
+    const c = changed[k], up = c.to > c.from;
+    return `<span style="display:inline-flex;align-items:center;gap:8px;background:rgba(0,0,0,.18);border-radius:20px;padding:6px 14px;font-size:.84rem;font-weight:600">
+      <span style="color:var(--muted)">${labels[k]}</span>
+      <span style="color:var(--muted);text-decoration:line-through">${c.from}${units[k]}</span>
+      <span style="color:var(--gold)">→ ${c.to}${units[k]} ${up?'▲':'▼'}</span></span>`;
+  }).join(' ');
+  banner.innerHTML = `
+    <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">
+      <div style="width:42px;height:42px;border-radius:12px;background:rgba(201,168,76,.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.3rem">🔔</div>
+      <div style="flex:1;min-width:220px">
+        <div style="font-weight:700;color:var(--gold);font-size:1rem;margin-bottom:8px">Din coach har opdateret dine makromål</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">${rows}</div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="dismissMacroUpdate()" style="flex-shrink:0">Forstået</button>
+    </div>`;
+  banner.classList.remove('hidden');
+  return changed;
+}
+
+// Klienten kvitterer for at have set ændringen — gem nuværende makroer som "set"
+function dismissMacroUpdate() {
+  if (S.user && S.diet) {
+    const cur = { calories:+S.diet.calories||0, protein:+S.diet.protein||0, carbs:+S.diet.carbs||0, fat:+S.diet.fat||0 };
+    localStorage.setItem('dsl_macros_' + S.user.id, JSON.stringify(cur));
+  }
+  const banner = document.getElementById('macro-update-banner');
+  if (banner) banner.classList.add('hidden');
+  // Fjern "Ny"-fremhævning ved at gen-rendere kostplanen
+  loadDiet();
+}
+
 async function loadDiet() {
   await fetchDiet();
   const isActive = S.profile?.status === 'active';
@@ -2001,19 +2052,28 @@ async function loadDiet() {
     return;
   }
   const d = S.diet;
+  // Tjek om coachen har ændret makromålene siden klienten sidst så dem
+  const changed = checkMacroChanges(d);
   document.getElementById('diet-title').textContent = d.plan_name || 'Din kostplan';
   document.getElementById('diet-desc').textContent = `${d.calories} kcal om dagen`;
   const badges = [
-    { v: d.calories, l: 'Kalorier', u: 'kcal' },
-    { v: d.protein + 'g', l: 'Protein', u: '' },
-    { v: d.carbs + 'g', l: 'Kulhydrat', u: '' },
-    { v: d.fat + 'g', l: 'Fedt', u: '' }
+    { v: d.calories, l: 'Kalorier', u: 'kcal', key: 'calories' },
+    { v: d.protein + 'g', l: 'Protein', u: '', key: 'protein' },
+    { v: d.carbs + 'g', l: 'Kulhydrat', u: '', key: 'carbs' },
+    { v: d.fat + 'g', l: 'Fedt', u: '', key: 'fat' }
   ];
-  document.getElementById('diet-macro-badges').innerHTML = badges.map(b => `
-    <div class="diet-macro-badge">
+  document.getElementById('diet-macro-badges').innerHTML = badges.map(b => {
+    const isChanged = changed[b.key];
+    // Fremhæv ændrede makroer med gylden ramme + "Ny"-mærkat
+    const style = isChanged ? 'border:1px solid var(--gold);border-radius:12px;padding:8px 12px;background:rgba(201,168,76,.10)' : '';
+    const tag = isChanged ? `<div style="font-size:.55rem;font-weight:800;letter-spacing:.12em;color:var(--gold);text-transform:uppercase;margin-top:4px">● Ny</div>` : '';
+    return `
+    <div class="diet-macro-badge" style="${style}">
       <div class="v">${b.v}${b.u}</div>
       <div class="l">${b.l}</div>
-    </div>`).join('');
+      ${tag}
+    </div>`;
+  }).join('');
   const mealIcons = [];
   document.getElementById('meal-list').innerHTML = (d.meals || []).map((m, i) => `
     <div class="meal-card">
