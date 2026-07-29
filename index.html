@@ -600,6 +600,10 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5h11M6.5 17.5h11M6 12h12"/><circle cx="4" cy="6.5" r="1.5"/><circle cx="4" cy="17.5" r="1.5"/><circle cx="20" cy="6.5" r="1.5"/><circle cx="20" cy="17.5" r="1.5"/></svg>
         Træning
       </div>
+      <div class="nav-item" data-page="supplements" onclick="navigate('supplements')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.5 20.5a5 5 0 01-7-7l6-6a5 5 0 017 7l-6 6z"/><path d="M8.5 8.5l7 7"/></svg>
+        Kosttilskud
+      </div>
       <div class="nav-item" data-page="progress" onclick="navigate('progress')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         Fremgang
@@ -651,9 +655,13 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 
     <!-- DASHBOARD -->
     <div id="pg-dashboard" class="page-wrap fade-in">
-      <div class="page-header">
-        <h2 id="dash-greeting">God dag!</h2>
-        <p id="dash-subtitle" style="color:var(--muted);font-size:.9rem;margin-top:4px">Her er din oversigt for i dag</p>
+      <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+        <div>
+          <h2 id="dash-greeting">God dag!</h2>
+          <p id="dash-subtitle" style="color:var(--muted);font-size:.9rem;margin-top:4px">Her er din oversigt for i dag</p>
+        </div>
+        <!-- Hurtig genvej til at logge dagens vægt -->
+        <button class="btn btn-gold" onclick="quickWeigh()" style="flex-shrink:0">⚖️ Vej dig nu</button>
       </div>
       <!-- Daglig vejnings-påmindelse: vises hvis der ikke er logget en vægt i dag -->
       <div id="weigh-reminder" class="hidden" onclick="navigate('progress')"
@@ -860,6 +868,16 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
         <button class="btn btn-gold btn-lg" id="btn-start-wk" onclick="startWorkout()">&#9654; Start træning</button>
         <button class="btn btn-outline btn-lg hidden" id="btn-end-wk" onclick="endWorkout()">Afslut træning</button>
       </div>
+    </div>
+
+    <!-- KOSTTILSKUD -->
+    <div id="pg-supplements" class="page-wrap fade-in hidden">
+      <div class="page-header">
+        <h2>Kosttilskud</h2>
+        <p style="color:var(--muted);font-size:.9rem;margin-top:4px">Dine anbefalede tilskud fra din coach</p>
+      </div>
+      <div id="supp-personal"></div>
+      <div id="supp-standard" style="margin-top:10px"></div>
     </div>
 
     <!-- FREMGANG -->
@@ -1744,6 +1762,7 @@ const PAGE_TITLES = {
   dashboard: 'Dashboard',
   diet: 'Kostplan',
   training: 'Træning',
+  supplements: 'Kosttilskud',
   progress: 'Fremgang',
   checkin: 'Ugentligt Check-in',
   photos: 'Fremskridtsfotos',
@@ -1762,6 +1781,17 @@ function navigate(page) {
   loadPage(page);
 }
 
+// Hurtig genvej: gå til Fremgang og gør vægt-feltet klar med det samme
+function quickWeigh() {
+  navigate('progress');
+  setTimeout(() => {
+    const dateEl = document.getElementById('wf-date');
+    const wEl = document.getElementById('wf-weight');
+    if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0, 10);
+    if (wEl) { wEl.focus(); wEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+  }, 250);
+}
+
 function openSidebar() {
   document.getElementById('sidebar').classList.add('open');
   document.getElementById('sb-overlay').classList.add('open');
@@ -1775,10 +1805,76 @@ async function loadPage(page) {
   if (page === 'dashboard') await loadDashboard();
   if (page === 'diet') await loadDiet();
   if (page === 'training') await loadTraining();
+  if (page === 'supplements') await loadSupplements();
   if (page === 'progress') await loadProgress();
   if (page === 'checkin') await loadCheckin();
   if (page === 'photos') await loadPhotos();
   if (page === 'messages') await loadMessages();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// KOSTTILSKUD
+// ════════════════════════════════════════════════════════════════════════════
+// Generelle anbefalinger (den faste del) — vises altid som info under klientens
+// personlige tilskud.
+const CLIENT_STD_SUPPS = [
+  { name:'Whey protein',        dose:'1-2 scoops (25-50 g)',    timing:'Efter træning / mellem måltider', note:'Nem måde at nå dit proteinmål.' },
+  { name:'Kreatin monohydrat',  dose:'5 g',                     timing:'Dagligt, samme tidspunkt',        note:'Tag hver dag — også hviledage. Timing er ligegyldig.' },
+  { name:'D-vitamin',           dose:'25-50 µg (1000-2000 IE)', timing:'Med et måltid',                   note:'Især vigtigt i vinterhalvåret i Danmark.' },
+  { name:'Omega-3 (fiskeolie)', dose:'1-2 g EPA/DHA',           timing:'Med et måltid',                   note:'Understøtter restitution og hjerte-kar.' },
+  { name:'Magnesium',           dose:'200-400 mg',              timing:'Om aftenen',                      note:'Kan støtte søvn og muskelfunktion.' },
+];
+
+async function fetchSupplements() {
+  const { data } = await sb.from('client_data')
+    .select('program')
+    .eq('user_id', S.user.id)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  let prog = {};
+  try { prog = JSON.parse(data?.program || '{}'); } catch(e) {}
+  S.supplements = Array.isArray(prog.supplements) ? prog.supplements : [];
+}
+
+function suppCardHTML(s, personal) {
+  const accent = personal ? 'var(--gold)' : 'var(--bdr-g)';
+  return `
+    <div style="display:flex;gap:14px;align-items:flex-start;padding:16px 18px;border:1px solid var(--bdr);border-left:3px solid ${accent};border-radius:var(--r2);background:var(--surf);margin-bottom:10px">
+      <div style="width:38px;height:38px;border-radius:10px;background:var(--gold-xs);border:1px solid var(--bdr-g);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem">💊</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;margin-bottom:4px">
+          <span style="font-weight:600;font-size:.98rem">${escHtml(s.name)}</span>
+          ${s.dose ? `<span style="font-size:.72rem;font-weight:700;color:var(--gold);background:var(--gold-xs);border:1px solid var(--bdr-g);border-radius:20px;padding:2px 10px">${escHtml(s.dose)}</span>` : ''}
+        </div>
+        ${s.timing ? `<div style="font-size:.8rem;color:var(--txt);margin-bottom:${s.note?'4px':'0'}"><span style="color:var(--muted)">Tidspunkt:</span> ${escHtml(s.timing)}</div>` : ''}
+        ${s.note ? `<div style="font-size:.82rem;color:var(--muted);line-height:1.5">${escHtml(s.note)}</div>` : ''}
+      </div>
+    </div>`;
+}
+
+async function loadSupplements() {
+  await fetchSupplements();
+  const personalEl = document.getElementById('supp-personal');
+  const standardEl = document.getElementById('supp-standard');
+  const list = (S.supplements || []).filter(s => s && s.name);
+  const isActive = S.profile?.status === 'active';
+
+  if (list.length) {
+    personalEl.innerHTML = `
+      <div style="font-size:.8rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.16em;margin:6px 0 14px">Dine tilskud fra coachen</div>
+      ${list.map(s => suppCardHTML(s, true)).join('')}`;
+  } else {
+    const msg = isActive
+      ? 'Din coach har ikke tilføjet personlige tilskud til dig endnu. Herunder ser du de generelle anbefalinger.'
+      : 'Når du er godkendt af din coach, vises dine personlige tilskud her. Herunder ser du de generelle anbefalinger.';
+    personalEl.innerHTML = `<div style="padding:20px;border:1px dashed var(--bdr);border-radius:var(--r2);color:var(--muted);font-size:.88rem;line-height:1.6">${msg}</div>`;
+  }
+
+  standardEl.innerHTML = `
+    <div style="font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.16em;margin:24px 0 14px">Generelle anbefalinger</div>
+    ${CLIENT_STD_SUPPS.map(s => suppCardHTML(s, false)).join('')}
+    <p style="font-size:.76rem;color:var(--dim);line-height:1.6;margin-top:14px">Kosttilskud erstatter ikke en varieret kost. Er du gravid, ammer eller tager medicin, så tal med din læge først. Følg altid din coachs anvisninger.</p>`;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
