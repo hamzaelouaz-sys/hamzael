@@ -1815,16 +1815,6 @@ async function loadPage(page) {
 // ════════════════════════════════════════════════════════════════════════════
 // KOSTTILSKUD
 // ════════════════════════════════════════════════════════════════════════════
-// Generelle anbefalinger (den faste del) — vises altid som info under klientens
-// personlige tilskud.
-const CLIENT_STD_SUPPS = [
-  { name:'Whey protein',        dose:'1-2 scoops (25-50 g)',    timing:'Efter træning / mellem måltider', note:'Nem måde at nå dit proteinmål.' },
-  { name:'Kreatin monohydrat',  dose:'5 g',                     timing:'Dagligt, samme tidspunkt',        note:'Tag hver dag — også hviledage. Timing er ligegyldig.' },
-  { name:'D-vitamin',           dose:'25-50 µg (1000-2000 IE)', timing:'Med et måltid',                   note:'Især vigtigt i vinterhalvåret i Danmark.' },
-  { name:'Omega-3 (fiskeolie)', dose:'1-2 g EPA/DHA',           timing:'Med et måltid',                   note:'Understøtter restitution og hjerte-kar.' },
-  { name:'Magnesium',           dose:'200-400 mg',              timing:'Om aftenen',                      note:'Kan støtte søvn og muskelfunktion.' },
-];
-
 async function fetchSupplements() {
   const { data } = await sb.from('client_data')
     .select('program')
@@ -1863,18 +1853,16 @@ async function loadSupplements() {
   if (list.length) {
     personalEl.innerHTML = `
       <div style="font-size:.8rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.16em;margin:6px 0 14px">Dine tilskud fra coachen</div>
-      ${list.map(s => suppCardHTML(s, true)).join('')}`;
+      ${list.map(s => suppCardHTML(s, true)).join('')}
+      <p style="font-size:.76rem;color:var(--dim);line-height:1.6;margin-top:14px">Kosttilskud erstatter ikke en varieret kost. Er du gravid, ammer eller tager medicin, så tal med din læge først. Følg altid din coachs anvisninger.</p>`;
   } else {
     const msg = isActive
-      ? 'Din coach har ikke tilføjet personlige tilskud til dig endnu. Herunder ser du de generelle anbefalinger.'
-      : 'Når du er godkendt af din coach, vises dine personlige tilskud her. Herunder ser du de generelle anbefalinger.';
+      ? 'Din coach har ikke tilføjet tilskud til dig endnu.'
+      : 'Når du er godkendt af din coach, vises dine tilskud her.';
     personalEl.innerHTML = `<div style="padding:20px;border:1px dashed var(--bdr);border-radius:var(--r2);color:var(--muted);font-size:.88rem;line-height:1.6">${msg}</div>`;
   }
 
-  standardEl.innerHTML = `
-    <div style="font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.16em;margin:24px 0 14px">Generelle anbefalinger</div>
-    ${CLIENT_STD_SUPPS.map(s => suppCardHTML(s, false)).join('')}
-    <p style="font-size:.76rem;color:var(--dim);line-height:1.6;margin-top:14px">Kosttilskud erstatter ikke en varieret kost. Er du gravid, ammer eller tager medicin, så tal med din læge først. Følg altid din coachs anvisninger.</p>`;
+  standardEl.innerHTML = '';
 }
 
 // ════════════════════════════════════════════════════════════════════════════
