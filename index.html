@@ -1200,7 +1200,7 @@ let C = {};
 
 // ─── Timer ──────────────────────────────────────────────────────────────────
 const RT_CIRC = 439.82; // 2π×70
-let timer = { active: false, remaining: 0, total: 0, iv: null };
+let timer = { active: false, endsAt: 0, remainingWhenPaused: 0, total: 0, iv: null };
 
 // ─── Workout player ─────────────────────────────────────────────────────────
 let WK = { started: false, exIdx: 0, setsDone: [], exercises: [] };
@@ -2636,24 +2636,29 @@ const RT_C = 2 * Math.PI * RT_R; // ≈ 439.82
 
 function startRestTimer(seconds) {
   clearInterval(timer.iv);
-  timer = { active: true, remaining: seconds, total: seconds, iv: null };
+  timer = { active: true, endsAt: Date.now() + seconds * 1000, remainingWhenPaused: seconds, total: seconds, iv: null };
   document.getElementById('rest-box').classList.remove('hidden');
   document.getElementById('rt-toggle').textContent = 'Pause';
   updateTimerUI();
-  timer.iv = setInterval(() => {
-    if (!timer.active) return;
-    timer.remaining--;
-    updateTimerUI();
-    if (timer.remaining <= 0) {
-      clearInterval(timer.iv);
-      document.getElementById('rest-box').classList.add('hidden');
-      toast('Hvile færdig — klar til næste sæt', 'ok');
-    }
-  }, 1000);
+  timer.iv = setInterval(tickTimer, 1000);
 }
 
-function updateTimerUI() {
-  const r = timer.remaining;
+// Regner ud fra timer.endsAt (et fast tidspunkt) i stedet for at tælle ned tick-for-tick —
+// så uret ikke går i stå/drifter når fanen throttles eller lukkes ned i baggrunden på mobil.
+function tickTimer() {
+  if (!timer.active) return;
+  const remaining = Math.max(0, Math.round((timer.endsAt - Date.now()) / 1000));
+  updateTimerUI(remaining);
+  if (remaining <= 0) {
+    clearInterval(timer.iv);
+    document.getElementById('rest-box').classList.add('hidden');
+    toast('Hvile færdig — klar til næste sæt', 'ok');
+  }
+}
+
+function updateTimerUI(remainingOverride) {
+  const r = remainingOverride !== undefined ? remainingOverride
+    : (timer.active ? Math.max(0, Math.round((timer.endsAt - Date.now()) / 1000)) : timer.remainingWhenPaused);
   const m = String(Math.floor(r / 60)).padStart(2, '0');
   const s = String(r % 60).padStart(2, '0');
   document.getElementById('rt-display').textContent = `${m}:${s}`;
@@ -2662,11 +2667,27 @@ function updateTimerUI() {
 }
 
 function toggleTimer() {
-  timer.active = !timer.active;
+  if (timer.active) {
+    timer.remainingWhenPaused = Math.max(0, Math.round((timer.endsAt - Date.now()) / 1000));
+    timer.active = false;
+  } else {
+    timer.endsAt = Date.now() + timer.remainingWhenPaused * 1000;
+    timer.active = true;
+  }
   document.getElementById('rt-toggle').textContent = timer.active ? 'Pause' : 'Fortsæt';
+  updateTimerUI();
 }
-function resetTimer() { timer.remaining = timer.total; updateTimerUI(); }
+function resetTimer() {
+  timer.endsAt = Date.now() + timer.total * 1000;
+  timer.remainingWhenPaused = timer.total;
+  updateTimerUI();
+}
 function skipTimer() { clearInterval(timer.iv); document.getElementById('rest-box').classList.add('hidden'); }
+
+// Genberegn straks når fanen bliver aktiv igen, så visningen ikke skal vente på næste tick
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && timer.active) tickTimer();
+});
 
 // ════════════════════════════════════════════════════════════════════════════
 // PROGRESS
