@@ -460,6 +460,12 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .micro-bar-fill.low{background:var(--red)}
 
 </style>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#13100D">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Skarpe Liv">
 </head>
 <body>
 
@@ -3277,6 +3283,15 @@ function toast(msg, type = 'ok') {
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 3200);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// PWA – service worker
+// ════════════════════════════════════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(e => console.warn('[SW] register fejlede', e));
+  });
 }
 
 </script>
