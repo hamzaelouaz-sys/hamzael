@@ -372,6 +372,8 @@ body.sv-lock{overflow:hidden}
 .set-inp::-webkit-inner-spin-button,.set-inp::-webkit-outer-spin-button{-webkit-appearance:none}
 .set-inp:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(217,199,167,.15)}
 .set-inp-x{color:var(--dim);font-size:.78rem}
+.set-inp-rpe{width:56px;color:var(--gold)}
+.ex-spark{display:block;width:100%;max-width:220px;height:34px;margin:2px 0 10px}
 
 /* ===== RESPONSIVE ===== */
 @media(max-width:1100px){
@@ -1264,8 +1266,10 @@ function saveWKState() {
     for (let j = 0; j < ex.sets; j++) {
       const wEl = document.getElementById(`sw-${i}-${j}`);
       const rEl = document.getElementById(`sr-${i}-${j}`);
+      const qEl = document.getElementById(`sq-${i}-${j}`);
       if (wEl) inputs[`sw-${i}-${j}`] = wEl.value;
       if (rEl) inputs[`sr-${i}-${j}`] = rEl.value;
+      if (qEl) inputs[`sq-${i}-${j}`] = qEl.value;
     }
   });
   localStorage.setItem('wk_state_' + S.user.id, JSON.stringify({
@@ -2255,16 +2259,21 @@ async function loadTraining() {
   const prevWeek = thisWeek > 1 ? thisWeek - 1 : 52;
   const prevYear = thisWeek > 1 ? thisYear : thisYear - 1;
 
-  const [cdRes, compRes, slRes] = await Promise.all([
+  const [cdRes, compRes, slRes, histRes] = await Promise.all([
     sb.from('client_data').select('program').eq('user_id', S.user.id)
       .order('updated_at', { ascending: false }).limit(1).maybeSingle(),
     sb.from('workout_completions').select('day_name')
       .eq('user_id', S.user.id).eq('week_number', thisWeek).eq('year', thisYear),
-    sb.from('strength_logs').select('exercise_name,week_number,year,day_name,set_number,weight_kg,reps')
+    sb.from('strength_logs').select('exercise_name,week_number,year,day_name,set_number,weight_kg,reps,rpe')
       .eq('user_id', S.user.id)
       .or(`week_number.eq.${prevWeek},week_number.eq.${thisWeek}`)
-      .order('created_at', { ascending: false }).limit(300)
+      .order('created_at', { ascending: false }).limit(300),
+    // Bredere historik (ikke kun seneste uge) til fremgangs-sparklines pr. øvelse
+    sb.from('strength_logs').select('exercise_name,weight_kg,created_at')
+      .eq('user_id', S.user.id)
+      .order('created_at', { ascending: false }).limit(500)
   ]);
+  S.strengthHistory = histRes.data || [];
 
   // Build lookup: exercise_name → alle sæt fra seneste session
   const sessionMap = {};
@@ -2402,6 +2411,7 @@ function renderTrainingDay(selectedDay) {
         <input id="sw-${i}-${j}" class="set-inp" type="number" step="0.5" placeholder="kg" min="0" oninput="saveWKState()">
         <span class="set-inp-x">×</span>
         <input id="sr-${i}-${j}" class="set-inp" type="number" placeholder="reps" min="0" oninput="saveWKState()">
+        <input id="sq-${i}-${j}" class="set-inp set-inp-rpe" type="number" placeholder="RPE" min="1" max="10" step="1" oninput="saveWKState()" title="RPE (valgfri, 1-10) — hvor hårdt føltes sættet">
       </div>`).join('');
     const vidBtn = ex.video_url ? `<button class="ex-video-btn" onclick="openVidModal(event,'${ex.name.replace(/'/g,"\\'")}','${ex.video_url.replace(/'/g,"\\'")}')">▶ Se video</button>` : '';
     return `<div class="ex-card" id="exc-${i}">
@@ -2415,10 +2425,12 @@ function renderTrainingDay(selectedDay) {
       </div>
       <div class="set-log-area" id="sla-${i}" style="display:none">
         ${prevHtml}
+        <canvas id="spark-${i}" class="ex-spark" width="220" height="34"></canvas>
         ${setInputs}
       </div>
     </div>`;
   }).join('');
+  exs.forEach((ex, i) => renderExerciseTrend(ex.name, 'spark-' + i));
 
   WK = { started: false, exIdx: 0, setsDone: exs.map(() => 0), exercises: exs };
   document.getElementById('btn-start-wk').classList.remove('hidden');
@@ -2426,6 +2438,57 @@ function renderTrainingDay(selectedDay) {
   restoreWKState(selectedDay);
   const anat = document.getElementById('anatomy-section');
   if (anat) { anat.classList.remove('hidden'); updateMuscleMap(exs); }
+}
+
+// Lille fremgangs-sparkline pr. øvelse — viser rent klientens egne tidligere løft over tid (max vægt pr. session), ingen fortolkning/anbefaling
+function renderExerciseTrend(exerciseName, canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const chartKey = 'spark_' + canvasId;
+  if (C[chartKey]) { C[chartKey].destroy(); delete C[chartKey]; }
+
+  const bySession = {};
+  (S.strengthHistory || []).forEach(r => {
+    if (r.exercise_name !== exerciseName) return;
+    const day = (r.created_at || '').slice(0, 10);
+    if (!day) return;
+    if (!bySession[day] || r.weight_kg > bySession[day]) bySession[day] = r.weight_kg;
+  });
+  const points = Object.entries(bySession).sort((a, b) => a[0].localeCompare(b[0])).slice(-10);
+  if (points.length < 2) return; // ingen reel trend at vise endnu
+
+  C[chartKey] = new Chart(canvas.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: points.map(p => p[0]),
+      datasets: [{
+        data: points.map(p => p[1]),
+        borderColor: '#c9a84c',
+        backgroundColor: 'rgba(201,168,76,0.08)',
+        borderWidth: 2,
+        pointRadius: 2,
+        pointBackgroundColor: '#c9a84c',
+        tension: 0.35,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: false,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1a1a',
+          borderColor: 'rgba(201,168,76,.3)',
+          borderWidth: 1,
+          titleColor: '#f0f0f0',
+          bodyColor: '#888',
+          callbacks: { label: ctx => ` ${ctx.parsed.y} kg` }
+        }
+      },
+      scales: { x: { display: false }, y: { display: false } }
+    }
+  });
 }
 
 function startWorkout() {
@@ -2565,8 +2628,10 @@ async function endWorkout() {
     for (let j = 0; j < ex.sets; j++) {
       const wEl = document.getElementById(`sw-${i}-${j}`);
       const rEl = document.getElementById(`sr-${i}-${j}`);
+      const qEl = document.getElementById(`sq-${i}-${j}`);
       const kg = parseFloat(wEl?.value);
       const reps = parseInt(rEl?.value);
+      const rpe = parseInt(qEl?.value);
       if (!isNaN(kg) && kg > 0) {
         strengthRows.push({
           user_id: S.user.id,
@@ -2577,6 +2642,7 @@ async function endWorkout() {
           set_number: j + 1,
           weight_kg: kg,
           reps: isNaN(reps) ? null : reps,
+          rpe: (!isNaN(rpe) && rpe >= 1 && rpe <= 10) ? rpe : null,
         });
       }
     }
