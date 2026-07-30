@@ -230,6 +230,26 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .set-dot.done{background:var(--gold)}
 .player-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 
+/* Fuldskærms træningssession — kompound-selector for at sikre den altid vinder over .player-box-kortstilen og mobil-mediequeries uanset rækkefølge i filen */
+.player-box.session-view{position:fixed;inset:0;z-index:190;background:var(--bg);margin:0;padding:0;border:none;border-radius:0;box-shadow:none;display:flex;flex-direction:column;transform:translateY(100%);transition:transform var(--trans);overflow:hidden}
+.player-box.session-view.open{transform:translateY(0)}
+.sv-topbar{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--bdr);flex-shrink:0}
+.sv-close{background:none;border:none;color:var(--muted);font-size:1.7rem;line-height:1;cursor:pointer;padding:4px 10px;border-radius:var(--r);transition:color var(--trans),transform .1s ease}
+.sv-close:active{color:var(--gold);transform:scale(.9)}
+.sv-progress{flex:1;display:flex;gap:4px}
+.sv-progress-seg{flex:1;height:3px;border-radius:2px;background:var(--surf3);transition:background var(--trans)}
+.sv-progress-seg.current{background:var(--gold-d)}
+.sv-progress-seg.done{background:var(--gold)}
+.sv-body{flex:1;overflow-y:auto;padding:24px 20px 32px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.sv-inner{width:100%;max-width:440px;text-align:center}
+.sv-inner .rest-timer-box{margin-bottom:22px}
+.pl-setlog-slot{width:100%;text-align:left;margin:4px 0 22px}
+.pl-setlog-slot .set-log-area{border-top:none;border-radius:var(--r2);border:1px solid var(--bdr)}
+body.sv-lock{overflow:hidden}
+@media(max-width:480px){
+  .player-box.session-view .player-ex-name{font-size:1.3rem}
+}
+
 .ex-list{display:flex;flex-direction:column;gap:10px;margin-bottom:22px}
 .ex-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:18px 22px;display:flex;align-items:center;gap:16px;transition:all var(--trans)}
 .ex-card:hover{border-color:var(--bdr-g)}
@@ -777,38 +797,6 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
         <div class="wk-name" id="wk-name">Indlæser...</div>
         <div class="wk-meta" id="wk-meta"></div>
       </div>
-      <div class="rest-timer-box hidden" id="rest-box">
-        <div class="rt-label">&#9203; Hvile</div>
-        <div class="rt-ring">
-          <svg viewBox="0 0 160 160" width="160" height="160">
-            <defs>
-              <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" style="stop-color:#c9a84c"/>
-                <stop offset="100%" style="stop-color:#e8cc7a"/>
-              </linearGradient>
-            </defs>
-            <circle class="rt-bg" cx="80" cy="80" r="70"/>
-            <circle class="rt-fg" id="rt-fg" cx="80" cy="80" r="70" style="stroke-dasharray:439.82;stroke-dashoffset:0"/>
-          </svg>
-          <div class="rt-display"><div class="rt-time" id="rt-display">02:00</div></div>
-        </div>
-        <div class="rt-btns">
-          <button class="btn btn-outline btn-sm" onclick="resetTimer()">Nulstil</button>
-          <button class="btn btn-gold btn-sm" onclick="toggleTimer()" id="rt-toggle">Pause</button>
-          <button class="btn btn-outline btn-sm" onclick="skipTimer()">Spring over</button>
-        </div>
-      </div>
-      <div class="player-box hidden" id="player-box">
-        <div class="player-current-lbl">Nuværende øvelse</div>
-        <div class="player-ex-name" id="pl-name">—</div>
-        <div class="player-ex-detail" id="pl-detail">—</div>
-        <div class="set-dots" id="pl-dots"></div>
-        <div class="player-btns">
-          <button class="btn btn-outline btn-sm" onclick="prevEx()">&#8592; Forrige</button>
-          <button class="btn btn-gold" onclick="completeSet()">Sæt udført ✓</button>
-          <button class="btn btn-outline btn-sm" onclick="nextEx()">Næste &#8594;</button>
-        </div>
-      </div>
       <!-- Muskel anatomi diagram -->
       <div id="anatomy-section" class="anatomy-section hidden">
         <div class="anatomy-views">
@@ -1102,6 +1090,49 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
     </div>
 
   </div>
+
+  <!-- Fuldskærms træningssession — bevidst UDENFOR #main så sidenavigation (som skjuler alle .page-wrap/pg-*) aldrig kan rive den væk midt i en session -->
+  <div class="player-box session-view hidden" id="player-box">
+    <div class="sv-topbar">
+      <button class="sv-close" onclick="closeSessionView()" aria-label="Luk træningsvisning">&times;</button>
+      <div class="sv-progress" id="sv-progress"></div>
+    </div>
+    <div class="sv-body">
+      <div class="sv-inner">
+        <div class="rest-timer-box hidden" id="rest-box">
+          <div class="rt-label">&#9203; Hvile</div>
+          <div class="rt-ring">
+            <svg viewBox="0 0 160 160" width="160" height="160">
+              <defs>
+                <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" style="stop-color:#c9a84c"/>
+                  <stop offset="100%" style="stop-color:#e8cc7a"/>
+                </linearGradient>
+              </defs>
+              <circle class="rt-bg" cx="80" cy="80" r="70"/>
+              <circle class="rt-fg" id="rt-fg" cx="80" cy="80" r="70" style="stroke-dasharray:439.82;stroke-dashoffset:0"/>
+            </svg>
+            <div class="rt-display"><div class="rt-time" id="rt-display">02:00</div></div>
+          </div>
+          <div class="rt-btns">
+            <button class="btn btn-outline btn-sm" onclick="resetTimer()">Nulstil</button>
+            <button class="btn btn-gold btn-sm" onclick="toggleTimer()" id="rt-toggle">Pause</button>
+            <button class="btn btn-outline btn-sm" onclick="skipTimer()">Spring over</button>
+          </div>
+        </div>
+        <div class="player-current-lbl">Nuværende øvelse</div>
+        <div class="player-ex-name" id="pl-name">—</div>
+        <div class="player-ex-detail" id="pl-detail">—</div>
+        <div class="set-dots" id="pl-dots"></div>
+        <div id="pl-setlog-slot" class="pl-setlog-slot"></div>
+        <div class="player-btns">
+          <button class="btn btn-outline btn-sm" onclick="prevEx()">&#8592; Forrige</button>
+          <button class="btn btn-gold" onclick="completeSet()">Sæt udført ✓</button>
+          <button class="btn btn-outline btn-sm" onclick="nextEx()">Næste &#8594;</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Video Modal -->
@@ -1268,7 +1299,6 @@ function restoreWKState(selectedDay) {
   if (WK.started) {
     document.getElementById('btn-start-wk').classList.add('hidden');
     document.getElementById('btn-end-wk').classList.remove('hidden');
-    document.getElementById('player-box').classList.remove('hidden');
     WK.exercises.forEach((_, i) => {
       const sla = document.getElementById('sla-' + i);
       if (sla) sla.style.display = 'block';
@@ -1278,6 +1308,7 @@ function restoreWKState(selectedDay) {
       }
     });
     updatePlayerUI();
+    openSessionView();
     toast('Træning genoprettet – fortsæt hvor du slap', 'ok');
   }
 }
@@ -1320,7 +1351,9 @@ async function boot(user) {
   showMainApp();
   startMsgRealtime();
   checkUnreadMessages();
-  navigate('dashboard');
+  // Genåbn den side brugeren var på (fx efter app'en er blevet genindlæst i baggrunden på mobil)
+  const lastPage = localStorage.getItem('dsl_last_page_' + S.user.id);
+  navigate(lastPage && PAGE_TITLES[lastPage] ? lastPage : 'dashboard');
 }
 
 function startMsgRealtime() {
@@ -1778,6 +1811,7 @@ const PAGE_TITLES = {
 
 function navigate(page) {
   S.currentPage = page;
+  if (S.user) localStorage.setItem('dsl_last_page_' + S.user.id, page);
   document.querySelectorAll('[id^="pg-"]').forEach(el => el.classList.add('hidden'));
   const target = document.getElementById('pg-' + page);
   target.classList.remove('hidden');
@@ -2312,8 +2346,10 @@ function renderDayStrip(selectedDay) {
 function switchDay(dayName) {
   renderDayStrip(dayName);
   renderTrainingDay(dayName);
+  document.getElementById('player-box').classList.remove('open');
   document.getElementById('player-box').classList.add('hidden');
   document.getElementById('rest-box').classList.add('hidden');
+  document.body.classList.remove('sv-lock');
   clearInterval(timer.iv);
 }
 
@@ -2396,15 +2432,33 @@ function startWorkout() {
   WK.started = true;
   document.getElementById('btn-start-wk').classList.add('hidden');
   document.getElementById('btn-end-wk').classList.remove('hidden');
-  document.getElementById('player-box').classList.remove('hidden');
   // Show set log inputs for all exercises
   WK.exercises.forEach((_, i) => {
     const sla = document.getElementById('sla-' + i);
     if (sla) sla.style.display = 'block';
   });
   updatePlayerUI();
+  openSessionView();
   saveWKState();
   toast('Træning startet', 'ok');
+}
+
+function openSessionView() {
+  const pb = document.getElementById('player-box');
+  pb.classList.remove('hidden');
+  requestAnimationFrame(() => pb.classList.add('open'));
+  document.body.classList.add('sv-lock');
+}
+
+function closeSessionView() {
+  const pb = document.getElementById('player-box');
+  // Flyt set-log-blokken for den aktuelle øvelse tilbage til dens plads i øvelseslisten
+  const sla = document.getElementById('sla-' + WK.exIdx);
+  const card = document.getElementById('exc-' + WK.exIdx);
+  if (sla && card && sla.parentElement?.id === 'pl-setlog-slot') card.appendChild(sla);
+  pb.classList.remove('open');
+  document.body.classList.remove('sv-lock');
+  setTimeout(() => pb.classList.add('hidden'), 220);
 }
 
 function updatePlayerUI() {
@@ -2415,6 +2469,20 @@ function updatePlayerUI() {
   const done = WK.setsDone[WK.exIdx];
   document.getElementById('pl-dots').innerHTML = Array.from({ length: ex.sets }, (_, i) =>
     `<div class="set-dot${i < done ? ' done' : ''}"></div>`).join('');
+
+  // Flyt den aktuelle øvelses log-inputs ind i sessionsvisningen (flytter de rigtige DOM-noder — sw-i-j/sr-i-j mister aldrig deres værdi eller id)
+  const slot = document.getElementById('pl-setlog-slot');
+  const sla = document.getElementById('sla-' + WK.exIdx);
+  if (slot && sla) { slot.innerHTML = ''; slot.appendChild(sla); sla.style.display = 'block'; }
+
+  const prog = document.getElementById('sv-progress');
+  if (prog) {
+    prog.innerHTML = WK.exercises.map((e, i) => {
+      const segDone = WK.setsDone[i] >= (e.sets || 0);
+      const cls = segDone ? 'done' : (i === WK.exIdx ? 'current' : '');
+      return `<div class="sv-progress-seg ${cls}"></div>`;
+    }).join('');
+  }
 
   document.querySelectorAll('[id^="exc-"]').forEach((c, i) => {
     c.classList.toggle('active', i === WK.exIdx);
@@ -2447,10 +2515,30 @@ function completeSet() {
 function nextEx() { if (WK.exIdx < WK.exercises.length - 1) { WK.exIdx++; updatePlayerUI(); } }
 function prevEx() { if (WK.exIdx > 0) { WK.exIdx--; updatePlayerUI(); } }
 
+// Swipe mellem øvelser i sessionsvisningen
+(function initSessionSwipe() {
+  const el = document.getElementById('player-box');
+  if (!el) return;
+  let x0 = null, y0 = null;
+  el.addEventListener('touchstart', e => {
+    x0 = e.touches[0].clientX;
+    y0 = e.touches[0].clientY;
+  }, { passive: true });
+  el.addEventListener('touchend', e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    const dy = e.changedTouches[0].clientY - y0;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) { dx < 0 ? nextEx() : prevEx(); }
+    x0 = null; y0 = null;
+  }, { passive: true });
+})();
+
 async function endWorkout() {
   clearInterval(timer.iv);
   document.getElementById('rest-box').classList.add('hidden');
+  document.getElementById('player-box').classList.remove('open');
   document.getElementById('player-box').classList.add('hidden');
+  document.body.classList.remove('sv-lock');
   const total = WK.setsDone.reduce((a, b) => a + b, 0);
   const exDone = WK.setsDone.filter((s, i) => s >= (WK.exercises[i]?.sets || 0)).length;
 
