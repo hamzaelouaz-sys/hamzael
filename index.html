@@ -1135,6 +1135,31 @@ body.sv-lock{overflow:hidden}
       </div>
     </div>
   </div>
+
+  <!-- Bottom nav – kun synlig på mobil, og kun når man er logget ind (indenfor #app, så den følger #app.hidden) -->
+  <div id="bottom-nav">
+    <button class="bn-item nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Oversigt
+    </button>
+    <button class="bn-item nav-item" data-page="diet" onclick="navigate('diet')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+      Kost
+    </button>
+    <button class="bn-item nav-item" data-page="training" onclick="navigate('training')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      Træning
+    </button>
+    <button class="bn-item nav-item" data-page="checkin" onclick="navigate('checkin')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      Check-in
+    </button>
+    <button class="bn-item nav-item" data-page="messages" onclick="navigate('messages')" style="position:relative">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      Beskeder
+      <span id="bn-msg-badge" class="bn-badge hidden"></span>
+    </button>
+  </div>
 </div>
 
 <!-- Video Modal -->
@@ -3476,29 +3501,5 @@ if ('serviceWorker' in navigator) {
 }
 
 </script>
-<!-- Bottom nav – kun synlig på mobil -->
-<div id="bottom-nav">
-  <button class="bn-item nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-    Oversigt
-  </button>
-  <button class="bn-item nav-item" data-page="diet" onclick="navigate('diet')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
-    Kost
-  </button>
-  <button class="bn-item nav-item" data-page="training" onclick="navigate('training')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-    Træning
-  </button>
-  <button class="bn-item nav-item" data-page="checkin" onclick="navigate('checkin')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-    Check-in
-  </button>
-  <button class="bn-item nav-item" data-page="messages" onclick="navigate('messages')" style="position:relative">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-    Beskeder
-    <span id="bn-msg-badge" class="bn-badge hidden"></span>
-  </button>
-</div>
 </body>
 </html>
