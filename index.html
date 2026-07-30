@@ -2281,18 +2281,16 @@ function toggleMeal(i) {
 
 async function loadTraining() {
   const { week: thisWeek, year: thisYear } = getWeekYear();
-  const prevWeek = thisWeek > 1 ? thisWeek - 1 : 52;
-  const prevYear = thisWeek > 1 ? thisYear : thisYear - 1;
 
   const [cdRes, compRes, slRes, histRes] = await Promise.all([
     sb.from('client_data').select('program').eq('user_id', S.user.id)
       .order('updated_at', { ascending: false }).limit(1).maybeSingle(),
     sb.from('workout_completions').select('day_name')
       .eq('user_id', S.user.id).eq('week_number', thisWeek).eq('year', thisYear),
+    // Ingen uge-begrænsning her — "Sidst:"-hintet skal altid vise klientens faktisk seneste session pr. øvelse, uanset hvor længe siden det er
     sb.from('strength_logs').select('exercise_name,week_number,year,day_name,set_number,weight_kg,reps,rpe')
       .eq('user_id', S.user.id)
-      .or(`week_number.eq.${prevWeek},week_number.eq.${thisWeek}`)
-      .order('created_at', { ascending: false }).limit(300),
+      .order('created_at', { ascending: false }).limit(500),
     // Bredere historik (ikke kun seneste uge) til fremgangs-sparklines pr. øvelse
     sb.from('strength_logs').select('exercise_name,weight_kg,created_at')
       .eq('user_id', S.user.id)
