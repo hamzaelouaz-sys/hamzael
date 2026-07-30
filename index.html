@@ -402,10 +402,11 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 
 /* ===== BOTTOM NAV (mobil) ===== */
 #bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:64px;background:rgba(10,10,10,.95);border-top:1px solid var(--bdr-g);z-index:110;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-.bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--dim);font-size:.56rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:8px 4px;transition:color var(--trans);position:relative;border:none;background:none}
+.bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--dim);font-size:.56rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:8px 4px;transition:color var(--trans),transform .1s ease;position:relative;border:none;background:none}
 .bn-item svg{width:22px;height:22px;flex-shrink:0}
 .bn-item.active{color:var(--gold)}
 .bn-item.active svg{opacity:1}
+.bn-item:active{transform:scale(.92);color:var(--gold)}
 .bn-badge{position:absolute;top:6px;right:calc(50% - 16px);background:var(--gold);color:#0a0a0a;border-radius:10px;font-size:.52rem;font-weight:800;padding:1px 5px;min-width:14px;text-align:center;line-height:1.5}
 
 @media(max-width:768px){
@@ -1778,7 +1779,12 @@ const PAGE_TITLES = {
 function navigate(page) {
   S.currentPage = page;
   document.querySelectorAll('[id^="pg-"]').forEach(el => el.classList.add('hidden'));
-  document.getElementById('pg-' + page).classList.remove('hidden');
+  const target = document.getElementById('pg-' + page);
+  target.classList.remove('hidden');
+  // Genafspil fade-ind ved hvert sideskift (ellers kører den kun ved første load)
+  target.classList.remove('fade-in');
+  void target.offsetWidth;
+  target.classList.add('fade-in');
   document.querySelectorAll('.nav-item').forEach(el => {
     el.classList.toggle('active', el.dataset.page === page);
   });
