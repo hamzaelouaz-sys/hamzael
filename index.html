@@ -2422,7 +2422,7 @@ function renderTrainingDay(selectedDay) {
   }
 
   document.getElementById('wk-name').textContent = day.name || selectedDay + 's træning';
-  document.getElementById('wk-meta').textContent = `${day.exercises?.length || 0} øvelser · ${wd.program_name || ''}`;
+  document.getElementById('wk-meta').textContent = `${day.exercises?.length || 0} øvelser · ${wd.program_name || ''}${wd.notes ? ' · ' + wd.notes : ''}`;
 
   const exs = day.exercises || [];
   document.getElementById('ex-list').innerHTML = exs.map((ex, i) => {
@@ -3390,26 +3390,27 @@ function updateMuscleMap(exercises) {
 // ════════════════════════════════════════════════════════════════════════════
 // [fiber(g), vitC(mg), ca(mg), fe(mg), zn(mg)] per 100g
 const MICRO_BANK = {
-  'Kyllingebryst (kogt)':[0,0,12,0.9,1.0],'Kyllingelår (kogt)':[0,0,12,1.1,2.0],
-  'Kyllingefilet (bagt)':[0,0,11,0.8,0.9],'Kalkun bryst (kogt)':[0,0,11,1.0,1.8],
-  'Kalkun (hakket)':[0,0,12,1.2,2.2],'Oksemørbrad (stegt)':[0,0,14,2.5,4.8],
+  'Kyllingebryst (rå)':[0,0,9,0.7,0.7],'Kyllingebryst (skiver, pålæg)':[0,0,12,0.9,1.0],
+  'Kyllingelår (rå, u. skind)':[0,0,8,0.7,1.3],
+  'Kyllingefilet (rå)':[0,0,9,0.6,0.7],'Kalkun bryst (rå)':[0,0,8,0.8,1.4],
+  'Kalkun (hakket)':[0,0,12,1.2,2.2],'Oksemørbrad (rå)':[0,0,9,1.7,3.2],
   'Oksekød hakket 10%':[0,0,11,2.2,4.5],'Oksekød hakket 5%':[0,0,12,2.4,4.8],
-  'Okse ribeye (stegt)':[0,0,10,2.1,5.4],'Okse inderlår (stegt)':[0,0,10,2.8,5.2],
-  'Svinekød (filet)':[0,0,10,1.0,2.0],'Svinemørbrad (stegt)':[0,0,12,1.1,2.3],
+  'Okse ribeye (rå)':[0,0,7,1.5,3.8],'Okse inderlår (rå)':[0,0,7,2.0,3.7],
+  'Svinekød (filet)':[0,0,10,1.0,2.0],'Svinemørbrad (rå)':[0,0,11,1.0,2.1],
   'Laks (fersk)':[0,0,13,0.4,0.5],'Laks (dåse)':[0,0,15,0.5,0.5],
   'Tun (dåse, vand)':[0,0,12,0.6,0.6],'Torsk (filet)':[0,0,16,0.4,0.4],
   'Makrel (dåse)':[0,0,16,1.6,0.9],'Sardiner (dåse)':[0,0,382,2.9,1.3],
-  'Rejer (kogt)':[0,0,64,0.5,1.1],'Æg (helt)':[0,0,56,1.8,1.3],
+  'Rejer (rå)':[0,0,64,0.5,1.1],'Æg (helt)':[0,0,56,1.8,1.3],
   'Æggehvide':[0,0,7,0.1,0.0],'Skyr (naturel)':[0,0,135,0.0,0.5],
   'Hytteost':[0,0,83,0.1,0.4],'Græksk yoghurt 0%':[0,0,110,0.1,0.5],
   'Græksk yoghurt 2%':[0,0,115,0.1,0.5],'Proteinpulver (valle)':[0,0,600,0.5,2.5],
   'Havregryn':[10,0,54,4.3,3.6],'Havregrød (lavet med vand)':[2,0,11,0.9,0.7],
-  'Havreklid':[17,0,73,6.6,3.1],'Hvid ris (kogt)':[0.4,0,10,0.2,0.5],
-  'Brun ris (kogt)':[1.8,0,10,0.5,0.6],'Quinoa (kogt)':[2.8,0,17,1.5,1.1],
-  'Bulgur (kogt)':[4.5,0,10,1.0,0.5],'Fuldkornsbrød':[6.0,0,30,2.5,1.5],
-  'Rugbrød':[6.5,0,24,2.0,1.3],'Pasta (kogt)':[1.8,0,7,0.5,0.5],
-  'Fuldkornspasta (kogt)':[3.5,0,18,1.3,0.8],'Kartofler (kogt)':[1.8,9,8,0.4,0.3],
-  'Søde kartofler (kogt)':[3.0,17,30,0.7,0.3],'Æble':[2.4,4,6,0.1,0.0],
+  'Havreklid':[17,0,73,6.6,3.1],'Hvid ris (rå)':[1.1,0,28,0.6,1.4],
+  'Brun ris (rå)':[5.5,0,30,1.5,1.8],'Quinoa (rå)':[8.6,0,52,4.6,3.4],
+  'Bulgur (rå)':[18.5,0,41,4.1,2.1],'Fuldkornsbrød':[6.0,0,30,2.5,1.5],
+  'Rugbrød':[6.5,0,24,2.0,1.3],'Pasta (rå)':[5.1,0,20,1.4,1.4],
+  'Fuldkornspasta (rå)':[9.7,0,50,3.6,2.2],'Kartofler (rå)':[1.6,8,7,0.4,0.3],
+  'Søde kartofler (rå)':[2.9,16,29,0.7,0.3],'Æble':[2.4,4,6,0.1,0.0],
   'Banan':[2.6,9,5,0.3,0.2],'Orange':[2.4,53,40,0.1,0.1],
   'Jordbær':[2.0,59,16,0.4,0.1],'Blåbær':[2.4,10,6,0.3,0.2],
   'Hindbær':[6.5,26,25,0.7,0.4],'Kiwi':[3.0,93,34,0.3,0.1],
@@ -3419,10 +3420,10 @@ const MICRO_BANK = {
   'Rød peberfrugt':[2.1,128,7,0.4,0.3],'Grønkål':[3.6,82,135,1.5,0.4],
   'Rosenkål':[3.8,85,42,1.4,0.4],'Gulerødder':[2.8,6,33,0.3,0.2],
   'Tomater':[1.2,14,10,0.3,0.2],'Agurk':[0.5,3,16,0.3,0.2],
-  'Avocado':[6.7,10,12,0.6,0.6],'Kikærter (kogt)':[7.6,2,49,2.9,1.5],
-  'Røde linser (kogt)':[7.9,2,19,3.3,1.3],'Grønne linser (kogt)':[7.9,2,19,3.3,1.3],
-  'Hvide bønner (kogt)':[6.3,0,70,3.7,1.0],'Sorte bønner (kogt)':[8.7,0,27,2.1,1.0],
-  'Edamame (kogt)':[5.2,6,63,2.3,1.4],'Tofu (fast)':[0.3,0,350,5.4,0.8],
+  'Avocado':[6.7,10,12,0.6,0.6],'Kikærter (rå, tørrede)':[17.5,5,113,6.7,3.5],
+  'Røde linser (rå, tørrede)':[23.9,6,58,10.0,3.9],'Grønne linser (rå, tørrede)':[24.0,6,58,10.0,4.0],
+  'Hvide bønner (rå, tørrede)':[15.2,0,169,9.0,2.4],'Sorte bønner (rå, tørrede)':[22.5,0,70,5.4,2.6],
+  'Edamame (rå, skallet)':[5.2,6,63,2.3,1.4],'Tofu (fast)':[0.3,0,350,5.4,0.8],
   'Mandler':[12.5,0,264,3.7,3.1],'Valnødder':[6.7,1,98,2.9,3.1],
   'Chiafrø':[34.4,1,631,7.7,4.6],'Hørfrø':[27.3,1,255,5.7,4.3],
   'Græskarkerner':[6.0,1,46,8.8,7.6],'Solsikkefrø':[8.6,1,78,5.3,5.0],
@@ -3431,7 +3432,7 @@ const MICRO_BANK = {
   'Feta':[0,0,360,0.7,1.4],'Mozzarella':[0,0,505,0.2,2.9],
   'Parmesan (revet)':[0,0,1180,0.9,4.0],'Hummus':[6.0,3,38,2.4,1.4],
   'Jordnøddesmør':[6.0,0,49,1.9,2.8],'Honning':[0.2,0,6,0.4,0.2],
-  'Sojasauce':[0.1,0,18,2.8,0.5],'Edamame (kogt)':[5.2,6,63,2.3,1.4],
+  'Sojasauce':[0.1,0,18,2.8,0.5],
 };
 
 function calcMicros(meals) {
