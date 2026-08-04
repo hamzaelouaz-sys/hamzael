@@ -2,7 +2,7 @@
 <html lang="da">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>Det Skarpe Liv | Online Coach – Kost & Træning</title>
 <meta name="description" content="Få personlig online coaching inden for kost og træning med Hamza El. Skræddersyede kostplaner og træningsprogrammer til dig der vil blive en bedre version af dig selv.">
 <meta name="keywords" content="online coach, kost og træning, personlig træner online, kostplan, træningsprogram, vægttab, muskelmasse, Danmark">
@@ -40,8 +40,8 @@
   --sans:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;
   --serif:'Archivo','Manrope',sans-serif;
 }
-html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:15px;line-height:1.55;overflow-x:hidden;min-height:100vh;-webkit-font-smoothing:antialiased}
+html{scroll-behavior:smooth;overscroll-behavior-y:none}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:15px;line-height:1.55;overflow-x:hidden;overscroll-behavior-y:none;min-height:100vh;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:var(--bg)}
 ::-webkit-scrollbar-thumb{background:var(--surf3);border-radius:3px}
@@ -79,7 +79,8 @@ input[type=range]{-webkit-appearance:none;width:100%;height:4px;border-radius:2p
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--gold);cursor:pointer;box-shadow:0 0 0 4px rgba(217,199,167,.18)}
 input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--gold);border:none;cursor:pointer;box-shadow:0 0 0 4px rgba(217,199,167,.18)}
 
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border:1px solid transparent;border-radius:var(--r);font-size:.85rem;font-weight:600;cursor:pointer;transition:all var(--trans);white-space:nowrap;font-family:inherit;letter-spacing:.02em;line-height:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border:1px solid transparent;border-radius:var(--r);font-size:.85rem;font-weight:600;cursor:pointer;transition:all var(--trans);white-space:nowrap;font-family:inherit;letter-spacing:.02em;line-height:1;touch-action:manipulation}
+.btn:active{transform:scale(.96)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .btn-gold{background:var(--gold);color:#1A130C;border-color:var(--gold)}
 .btn-gold:not(:disabled):hover{background:var(--gold-l);border-color:var(--gold-l);box-shadow:0 8px 24px rgba(217,199,167,.25)}
@@ -233,14 +234,14 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 /* Fuldskærms træningssession — kompound-selector for at sikre den altid vinder over .player-box-kortstilen og mobil-mediequeries uanset rækkefølge i filen */
 .player-box.session-view{position:fixed;inset:0;z-index:190;background:var(--bg);margin:0;padding:0;border:none;border-radius:0;box-shadow:none;display:flex;flex-direction:column;transform:translateY(100%);transition:transform var(--trans);overflow:hidden}
 .player-box.session-view.open{transform:translateY(0)}
-.sv-topbar{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--bdr);flex-shrink:0}
+.sv-topbar{display:flex;align-items:center;gap:14px;padding:calc(14px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 14px calc(16px + env(safe-area-inset-left));border-bottom:1px solid var(--bdr);flex-shrink:0}
 .sv-close{background:none;border:none;color:var(--muted);font-size:1.7rem;line-height:1;cursor:pointer;padding:4px 10px;border-radius:var(--r);transition:color var(--trans),transform .1s ease}
 .sv-close:active{color:var(--gold);transform:scale(.9)}
 .sv-progress{flex:1;display:flex;gap:4px}
 .sv-progress-seg{flex:1;height:3px;border-radius:2px;background:var(--surf3);transition:background var(--trans)}
 .sv-progress-seg.current{background:var(--gold-d)}
 .sv-progress-seg.done{background:var(--gold)}
-.sv-body{flex:1;overflow-y:auto;padding:24px 20px 32px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.sv-body{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:24px calc(20px + env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left));display:flex;flex-direction:column;align-items:center;justify-content:center}
 .sv-inner{width:100%;max-width:440px;text-align:center}
 .sv-inner .rest-timer-box{margin-bottom:22px}
 .pl-setlog-slot{width:100%;text-align:left;margin:4px 0 22px}
@@ -333,7 +334,7 @@ body.sv-lock{overflow:hidden}
 
 /* ===== CHAT ===== */
 .chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 240px);min-height:440px;background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden}
-.chat-messages{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:14px}
+.chat-messages{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:22px;display:flex;flex-direction:column;gap:14px}
 .chat-bubble-wrap{display:flex;flex-direction:column;max-width:72%}
 .chat-bubble-wrap.client{align-self:flex-end;align-items:flex-end}
 .chat-bubble-wrap.coach{align-self:flex-start;align-items:flex-start}
@@ -423,8 +424,8 @@ body.sv-lock{overflow:hidden}
 }
 
 /* ===== BOTTOM NAV (mobil) ===== */
-#bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:64px;background:rgba(10,10,10,.95);border-top:1px solid var(--bdr-g);z-index:110;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-.bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--dim);font-size:.56rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:8px 4px;transition:color var(--trans),transform .1s ease;position:relative;border:none;background:none}
+#bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:calc(64px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);background:rgba(10,10,10,.95);border-top:1px solid var(--bdr-g);z-index:110;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--dim);font-size:.56rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:8px 4px;transition:color var(--trans),transform .1s ease;position:relative;border:none;background:none;touch-action:manipulation}
 .bn-item svg{width:22px;height:22px;flex-shrink:0}
 .bn-item.active{color:var(--gold)}
 .bn-item.active svg{opacity:1}
@@ -433,9 +434,9 @@ body.sv-lock{overflow:hidden}
 
 @media(max-width:768px){
   #bottom-nav{display:flex}
-  #main{padding-bottom:64px}
-  .page-wrap{padding:16px 14px 80px}
-  .toast{bottom:80px;right:14px;left:14px;text-align:center}
+  #main{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
+  .page-wrap{padding:16px 14px calc(80px + env(safe-area-inset-bottom))}
+  .toast{bottom:calc(80px + env(safe-area-inset-bottom));right:14px;left:14px;text-align:center}
   .set-inp{width:80px;padding:10px;font-size:.95rem}
   .set-log-row{gap:10px;margin-bottom:10px}
   .ex-card{flex-wrap:wrap;gap:10px;padding:16px}
@@ -691,6 +692,17 @@ body.sv-lock{overflow:hidden}
         </div>
         <!-- Hurtig genvej til at logge dagens vægt -->
         <button class="btn btn-gold" onclick="quickWeigh()" style="flex-shrink:0">⚖️ Vej dig nu</button>
+      </div>
+      <!-- Installer-som-app-banner: vises kun hvis siden ikke allerede kører som installeret hjemmeskærm-app og brugeren ikke har afvist den før -->
+      <div id="install-banner" class="hidden"
+           style="display:flex;align-items:center;gap:14px;padding:16px 20px;margin-bottom:22px;border-radius:var(--r2);background:linear-gradient(90deg,rgba(201,168,76,.16),rgba(201,168,76,.05));border:1px solid var(--bdr-g)">
+        <div style="width:42px;height:42px;border-radius:12px;background:rgba(201,168,76,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.3rem">📲</div>
+        <div style="flex:1;min-width:220px">
+          <div style="font-weight:700;color:var(--gold);font-size:.95rem;margin-bottom:2px">Installer appen på din telefon</div>
+          <div id="install-banner-sub" style="color:var(--muted);font-size:.82rem">Få hurtigere adgang og en bedre oplevelse — som en rigtig app.</div>
+        </div>
+        <button class="btn btn-gold btn-sm" id="install-banner-btn" style="flex-shrink:0">Installer</button>
+        <button class="btn btn-outline btn-sm" onclick="dismissInstallBanner()" style="flex-shrink:0" aria-label="Luk">✕</button>
       </div>
       <!-- Daglig vejnings-påmindelse: vises hvis der ikke er logget en vægt i dag -->
       <div id="weigh-reminder" class="hidden" onclick="navigate('progress')"
@@ -1975,6 +1987,8 @@ async function loadDashboard() {
   const lastLog = S.weightLog[0];
   document.getElementById('s-weight').textContent = lastLog?.weight ?? '—';
 
+  updateInstallBanner();
+
   // Daglig vejnings-påmindelse: vis banner hvis der IKKE er logget en vægt i dag
   const reminderEl = document.getElementById('weigh-reminder');
   if (reminderEl) {
@@ -2579,6 +2593,7 @@ function updatePlayerUI() {
 function completeSet() {
   const ex = WK.exercises[WK.exIdx];
   if (!ex) return;
+  haptic(15);
   WK.setsDone[WK.exIdx]++;
   const done = WK.setsDone[WK.exIdx];
   const dot = document.getElementById(`esd-${WK.exIdx}-${done - 1}`);
@@ -2589,11 +2604,13 @@ function completeSet() {
   if (done < ex.sets) {
     startRestTimer(ex.rest || 90);
   } else if (WK.exIdx < WK.exercises.length - 1) {
+    haptic([15, 60, 15]);
     toast(`${ex.name} færdig! ✓`, 'ok');
     WK.exIdx++;
     updatePlayerUI();
     startRestTimer(WK.exercises[WK.exIdx]?.rest || 90);
   } else {
+    haptic([15, 60, 15, 60, 15]);
     toast('Alle øvelser afsluttet! Klik "Afslut træning"', 'ok');
   }
 }
@@ -2607,6 +2624,8 @@ function prevEx() { if (WK.exIdx > 0) { WK.exIdx--; updatePlayerUI(); } }
   if (!el) return;
   let x0 = null, y0 = null;
   el.addEventListener('touchstart', e => {
+    // Swipe kun fra selve spillerkortet — ikke når man taster i vægt/reps/RPE-felter (undgår util. øvelsesskift midt i indtastning)
+    if (e.target.closest('.pl-setlog-slot, input, button, .set-log-area')) { x0 = null; y0 = null; return; }
     x0 = e.touches[0].clientX;
     y0 = e.touches[0].clientY;
   }, { passive: true });
@@ -2614,7 +2633,7 @@ function prevEx() { if (WK.exIdx > 0) { WK.exIdx--; updatePlayerUI(); } }
     if (x0 === null) return;
     const dx = e.changedTouches[0].clientX - x0;
     const dy = e.changedTouches[0].clientY - y0;
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) { dx < 0 ? nextEx() : prevEx(); }
+    if (Math.abs(dx) > 80 && Math.abs(dx) > Math.abs(dy) * 2) { dx < 0 ? nextEx() : prevEx(); }
     x0 = null; y0 = null;
   }, { passive: true });
 })();
@@ -2679,6 +2698,7 @@ async function endWorkout() {
   }
 
   // Vis modal EFTER data er gemt
+  haptic([20, 60, 20, 60, 40]);
   document.getElementById('wk-modal-txt').textContent =
     `Du fuldførte ${total} sæt fordelt på ${exDone} af ${WK.exercises.length} øvelser. Fantastisk indsats!`;
   document.getElementById('wk-modal').classList.remove('hidden');
@@ -2741,6 +2761,7 @@ function tickTimer() {
   if (remaining <= 0) {
     clearInterval(timer.iv);
     document.getElementById('rest-box').classList.add('hidden');
+    haptic([30, 80, 30]);
     toast('Hvile færdig — klar til næste sæt', 'ok');
   }
 }
@@ -3480,6 +3501,13 @@ function renderMicroPanel(meals) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// HAPTIK — kort vibration ved vigtige træningsbegivenheder (kun der telefonen understøtter det)
+// ════════════════════════════════════════════════════════════════════════════
+function haptic(pattern = 15) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // TOAST
 // ════════════════════════════════════════════════════════════════════════════
 function toast(msg, type = 'ok') {
@@ -3497,6 +3525,57 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(e => console.warn('[SW] register fejlede', e));
   });
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// PWA – "Føj til hjemmeskærm"-banner
+// ════════════════════════════════════════════════════════════════════════════
+let deferredInstallPrompt = null;
+const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+
+// Chrome/Android holder selv installations-dialogen tilbage indtil vi kalder .prompt() —
+// vi opsnapper den her og viser vores eget banner i stedet for browserens standard-popup.
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  updateInstallBanner();
+});
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  document.getElementById('install-banner')?.classList.add('hidden');
+});
+
+function updateInstallBanner() {
+  const el = document.getElementById('install-banner');
+  if (!el || !S.user) return;
+  if (isStandalone() || localStorage.getItem('dsl_install_dismissed')) { el.classList.add('hidden'); return; }
+
+  const sub = document.getElementById('install-banner-sub');
+  const btn = document.getElementById('install-banner-btn');
+
+  if (deferredInstallPrompt) {
+    sub.textContent = 'Få hurtigere adgang og en bedre oplevelse — som en rigtig app.';
+    btn.classList.remove('hidden');
+    btn.onclick = async () => {
+      deferredInstallPrompt.prompt();
+      const { outcome } = await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      if (outcome === 'accepted') el.classList.add('hidden');
+    };
+    el.classList.remove('hidden');
+  } else if (isIOS()) {
+    sub.innerHTML = 'Tryk på <b>Del-ikonet</b> nederst i Safari (firkant med pil op), og vælg <b>"Føj til hjemmeskærm"</b>.';
+    btn.classList.add('hidden');
+    el.classList.remove('hidden');
+  } else {
+    el.classList.add('hidden'); // hverken installations-event (endnu) eller iOS — fx desktop-browser
+  }
+}
+
+function dismissInstallBanner() {
+  localStorage.setItem('dsl_install_dismissed', '1');
+  document.getElementById('install-banner')?.classList.add('hidden');
 }
 
 </script>
