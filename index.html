@@ -247,6 +247,8 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .pl-setlog-slot{width:100%;text-align:left;margin:4px 0 22px}
 .pl-setlog-slot .set-log-area{border-top:none;border-radius:var(--r2);border:1px solid var(--bdr)}
 body.sv-lock{overflow:hidden}
+/* Forrige/Næste er nu eneste måde at skifte øvelse på (swipe fjernet efter klientfeedback) — større tap-mål */
+.player-box.session-view .player-btns .btn{flex:1;min-height:48px}
 @media(max-width:480px){
   .player-box.session-view .player-ex-name{font-size:1.3rem}
 }
@@ -652,6 +654,10 @@ body.sv-lock{overflow:hidden}
         Beskeder
         <span class="nav-badge hidden" id="msg-badge"></span>
       </div>
+      <div class="nav-item" onclick="showInstallHelp()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        Installer app
+      </div>
     </nav>
     <div class="sb-footer">
       <div class="user-chip">
@@ -818,56 +824,61 @@ body.sv-lock{overflow:hidden}
           <div class="anatomy-view-wrap">
             <div class="anatomy-view-lbl">Forside</div>
             <svg class="anatomy-svg" viewBox="0 0 80 235" xmlns="http://www.w3.org/2000/svg">
-              <ellipse cx="40" cy="13" rx="10" ry="11" class="ms ms-skin"/>
-              <path d="M34 22 L46 22 L45 30 Q40 33 35 30Z" class="ms ms-skin"/>
-              <path d="M22 40 Q31 26 38 24 L42 24 Q49 26 58 40 Q54 47 48 45 Q44 42 40 42 Q36 42 32 45 Q26 47 22 40Z" data-m="traps" class="ms"/>
-              <path d="M12 42 Q9 48 10 55 Q11 63 18 66 Q25 65 26 57 Q27 48 22 42 Q17 39 12 42Z" data-m="front-delts" class="ms"/>
-              <path d="M68 42 Q71 48 70 55 Q69 63 62 66 Q55 65 54 57 Q53 48 58 42 Q63 39 68 42Z" data-m="front-delts" class="ms"/>
-              <path d="M31 44 Q24 46 23 55 Q22 65 27 72 Q32 76 38 74 L38 46 Q35 44 31 44Z" data-m="chest" class="ms"/>
-              <path d="M49 44 Q56 46 57 55 Q58 65 53 72 Q48 76 42 74 L42 46 Q45 44 49 44Z" data-m="chest" class="ms"/>
-              <path d="M9 55 Q7 50 11 46 Q17 43 22 47 Q25 52 24 60 Q23 70 20 80 Q16 86 11 84 Q7 80 7 72 Q6 63 9 55Z" data-m="biceps" class="ms"/>
-              <path d="M71 55 Q73 50 69 46 Q63 43 58 47 Q55 52 56 60 Q57 70 60 80 Q64 86 69 84 Q73 80 73 72 Q74 63 71 55Z" data-m="biceps" class="ms"/>
-              <path d="M9 84 Q7 90 8 100 Q9 112 12 119 Q15 122 18 119 Q20 112 19 100 Q19 90 20 82 Q15 80 9 84Z" class="ms ms-skin"/>
-              <path d="M71 84 Q73 90 72 100 Q71 112 68 119 Q65 122 62 119 Q60 112 61 100 Q61 90 60 82 Q65 80 71 84Z" class="ms ms-skin"/>
-              <rect x="31" y="76" width="8" height="8" rx="2.5" data-m="abs" class="ms"/>
-              <rect x="41" y="76" width="8" height="8" rx="2.5" data-m="abs" class="ms"/>
-              <rect x="31" y="86" width="8" height="8" rx="2.5" data-m="abs" class="ms"/>
-              <rect x="41" y="86" width="8" height="8" rx="2.5" data-m="abs" class="ms"/>
-              <rect x="31" y="96" width="8" height="8" rx="2.5" data-m="abs" class="ms"/>
-              <rect x="41" y="96" width="8" height="8" rx="2.5" data-m="abs" class="ms"/>
-              <path d="M27 76 Q23 80 22 88 Q21 98 24 106 Q26 110 30 108 L30 78 Q29 76 27 76Z" data-m="obliques" class="ms"/>
-              <path d="M53 76 Q57 80 58 88 Q59 98 56 106 Q54 110 50 108 L50 78 Q51 76 53 76Z" data-m="obliques" class="ms"/>
-              <path d="M24 106 Q40 116 56 106 L56 122 Q40 130 24 122Z" class="ms ms-skin"/>
-              <path d="M25 122 Q22 132 22 145 Q22 160 24 172 Q26 182 32 184 Q37 183 38 175 Q39 160 38 145 Q37 130 34 122 Q30 120 25 122Z" data-m="quads" class="ms"/>
-              <path d="M55 122 Q58 132 58 145 Q58 160 56 172 Q54 182 48 184 Q43 183 42 175 Q41 160 42 145 Q43 130 46 122 Q50 120 55 122Z" data-m="quads" class="ms"/>
-              <ellipse cx="31" cy="187" rx="6.5" ry="5.5" class="ms ms-skin"/>
-              <ellipse cx="49" cy="187" rx="6.5" ry="5.5" class="ms ms-skin"/>
-              <path d="M26 191 Q23 198 24 208 Q25 218 28 226 Q30 230 33 227 Q35 220 34 208 Q34 198 32 191 Q29 189 26 191Z" data-m="calves" class="ms"/>
-              <path d="M54 191 Q57 198 56 208 Q55 218 52 226 Q50 230 47 227 Q45 220 46 208 Q46 198 48 191 Q51 189 54 191Z" data-m="calves" class="ms"/>
+              <ellipse cx="40" cy="13" rx="9" ry="10" class="ms ms-skin"/>
+              <rect x="35" y="21" width="10" height="8" rx="3" class="ms ms-skin"/>
+              <rect x="27" y="26" width="26" height="10" rx="5" data-m="traps" class="ms"/>
+              <ellipse cx="17" cy="41" rx="7.5" ry="9" data-m="front-delts" class="ms"/>
+              <ellipse cx="63" cy="41" rx="7.5" ry="9" data-m="front-delts" class="ms"/>
+              <rect x="23" y="38" width="15" height="18" rx="5" data-m="chest" class="ms"/>
+              <rect x="42" y="38" width="15" height="18" rx="5" data-m="chest" class="ms"/>
+              <rect x="8" y="44" width="9" height="28" rx="4.5" data-m="biceps" class="ms"/>
+              <rect x="63" y="44" width="9" height="28" rx="4.5" data-m="biceps" class="ms"/>
+              <rect x="7" y="74" width="8" height="26" rx="4" class="ms ms-skin"/>
+              <rect x="65" y="74" width="8" height="26" rx="4" class="ms ms-skin"/>
+              <ellipse cx="11" cy="103" rx="5" ry="5.5" class="ms ms-skin"/>
+              <ellipse cx="69" cy="103" rx="5" ry="5.5" class="ms ms-skin"/>
+              <rect x="34" y="58" width="12" height="10" rx="3.5" data-m="abs" class="ms"/>
+              <rect x="34" y="70" width="12" height="10" rx="3.5" data-m="abs" class="ms"/>
+              <rect x="34" y="82" width="12" height="10" rx="3.5" data-m="abs" class="ms"/>
+              <rect x="22" y="60" width="8" height="30" rx="4" data-m="obliques" class="ms"/>
+              <rect x="50" y="60" width="8" height="30" rx="4" data-m="obliques" class="ms"/>
+              <rect x="24" y="95" width="32" height="9" rx="4" class="ms ms-skin"/>
+              <rect x="24" y="104" width="13" height="64" rx="6.5" data-m="quads" class="ms"/>
+              <rect x="43" y="104" width="13" height="64" rx="6.5" data-m="quads" class="ms"/>
+              <ellipse cx="30.5" cy="172" rx="5.5" ry="4.5" class="ms ms-skin"/>
+              <ellipse cx="49.5" cy="172" rx="5.5" ry="4.5" class="ms ms-skin"/>
+              <rect x="25" y="176" width="11" height="40" rx="5.5" data-m="calves" class="ms"/>
+              <rect x="44" y="176" width="11" height="40" rx="5.5" data-m="calves" class="ms"/>
+              <rect x="23" y="218" width="15" height="8" rx="4" class="ms ms-skin"/>
+              <rect x="42" y="218" width="15" height="8" rx="4" class="ms ms-skin"/>
             </svg>
           </div>
           <div class="anatomy-view-wrap">
             <div class="anatomy-view-lbl">Bagside</div>
             <svg class="anatomy-svg" viewBox="0 0 80 235" xmlns="http://www.w3.org/2000/svg">
-              <ellipse cx="40" cy="13" rx="10" ry="11" class="ms ms-skin"/>
-              <path d="M34 22 L46 22 L45 30 Q40 33 35 30Z" class="ms ms-skin"/>
-              <path d="M23 40 Q30 26 38 24 L42 24 Q50 26 57 40 Q54 55 46 62 Q43 60 40 60 Q37 60 34 62 Q26 55 23 40Z" data-m="traps" class="ms"/>
-              <path d="M12 42 Q9 48 10 55 Q11 63 18 66 Q25 65 26 57 Q27 48 22 42 Q17 39 12 42Z" data-m="rear-delts" class="ms"/>
-              <path d="M68 42 Q71 48 70 55 Q69 63 62 66 Q55 65 54 57 Q53 48 58 42 Q63 39 68 42Z" data-m="rear-delts" class="ms"/>
-              <path d="M26 62 Q22 70 21 82 Q20 94 24 104 Q28 110 34 108 Q37 106 37 100 L37 64 Q32 61 26 62Z" data-m="lats" class="ms"/>
-              <path d="M54 62 Q58 70 59 82 Q60 94 56 104 Q52 110 46 108 Q43 106 43 100 L43 64 Q48 61 54 62Z" data-m="lats" class="ms"/>
-              <path d="M9 55 Q7 50 11 46 Q17 43 22 47 Q25 52 24 60 Q23 70 20 80 Q16 86 11 84 Q7 80 7 72 Q6 63 9 55Z" data-m="triceps" class="ms"/>
-              <path d="M71 55 Q73 50 69 46 Q63 43 58 47 Q55 52 56 60 Q57 70 60 80 Q64 86 69 84 Q73 80 73 72 Q74 63 71 55Z" data-m="triceps" class="ms"/>
-              <path d="M9 84 Q7 90 8 100 Q9 112 12 119 Q15 122 18 119 Q20 112 19 100 Q19 90 20 82 Q15 80 9 84Z" class="ms ms-skin"/>
-              <path d="M71 84 Q73 90 72 100 Q71 112 68 119 Q65 122 62 119 Q60 112 61 100 Q61 90 60 82 Q65 80 71 84Z" class="ms ms-skin"/>
-              <ellipse cx="40" cy="106" rx="10" ry="9" data-m="lower-back" class="ms"/>
-              <path d="M25 112 Q40 106 55 112 Q57 122 54 130 Q47 136 40 135 Q33 136 26 130 Q23 122 25 112Z" data-m="glutes" class="ms"/>
-              <path d="M26 133 Q23 142 23 155 Q23 168 25 178 Q27 184 32 184 Q36 183 37 176 Q38 162 37 148 Q36 136 33 133 Q29 131 26 133Z" data-m="hamstrings" class="ms"/>
-              <path d="M54 133 Q57 142 57 155 Q57 168 55 178 Q53 184 48 184 Q44 183 43 176 Q42 162 43 148 Q44 136 47 133 Q51 131 54 133Z" data-m="hamstrings" class="ms"/>
-              <ellipse cx="31" cy="187" rx="6.5" ry="5.5" class="ms ms-skin"/>
-              <ellipse cx="49" cy="187" rx="6.5" ry="5.5" class="ms ms-skin"/>
-              <path d="M25 191 Q21 198 22 208 Q23 218 27 226 Q30 231 34 227 Q37 219 36 207 Q35 197 32 191 Q28 188 25 191Z" data-m="calves" class="ms"/>
-              <path d="M55 191 Q59 198 58 208 Q57 218 53 226 Q50 231 46 227 Q43 219 44 207 Q45 197 48 191 Q52 188 55 191Z" data-m="calves" class="ms"/>
+              <ellipse cx="40" cy="13" rx="9" ry="10" class="ms ms-skin"/>
+              <rect x="35" y="21" width="10" height="8" rx="3" class="ms ms-skin"/>
+              <rect x="27" y="26" width="26" height="10" rx="5" data-m="traps" class="ms"/>
+              <ellipse cx="17" cy="41" rx="7.5" ry="9" data-m="rear-delts" class="ms"/>
+              <ellipse cx="63" cy="41" rx="7.5" ry="9" data-m="rear-delts" class="ms"/>
+              <rect x="20" y="40" width="16" height="32" rx="7" data-m="lats" class="ms"/>
+              <rect x="44" y="40" width="16" height="32" rx="7" data-m="lats" class="ms"/>
+              <rect x="8" y="44" width="9" height="28" rx="4.5" data-m="triceps" class="ms"/>
+              <rect x="63" y="44" width="9" height="28" rx="4.5" data-m="triceps" class="ms"/>
+              <rect x="7" y="74" width="8" height="26" rx="4" class="ms ms-skin"/>
+              <rect x="65" y="74" width="8" height="26" rx="4" class="ms ms-skin"/>
+              <ellipse cx="11" cy="103" rx="5" ry="5.5" class="ms ms-skin"/>
+              <ellipse cx="69" cy="103" rx="5" ry="5.5" class="ms ms-skin"/>
+              <ellipse cx="40" cy="86" rx="11" ry="11" data-m="lower-back" class="ms"/>
+              <rect x="22" y="98" width="36" height="18" rx="9" data-m="glutes" class="ms"/>
+              <rect x="24" y="116" width="13" height="56" rx="6.5" data-m="hamstrings" class="ms"/>
+              <rect x="43" y="116" width="13" height="56" rx="6.5" data-m="hamstrings" class="ms"/>
+              <ellipse cx="30.5" cy="172" rx="5.5" ry="4.5" class="ms ms-skin"/>
+              <ellipse cx="49.5" cy="172" rx="5.5" ry="4.5" class="ms ms-skin"/>
+              <rect x="25" y="176" width="11" height="40" rx="5.5" data-m="calves" class="ms"/>
+              <rect x="44" y="176" width="11" height="40" rx="5.5" data-m="calves" class="ms"/>
+              <rect x="23" y="218" width="15" height="8" rx="4" class="ms ms-skin"/>
+              <rect x="42" y="218" width="15" height="8" rx="4" class="ms ms-skin"/>
             </svg>
           </div>
         </div>
@@ -1197,6 +1208,34 @@ body.sv-lock{overflow:hidden}
     <h2>Træning Afsluttet!</h2>
     <p id="wk-modal-txt">Godt klaret! Du er ét skridt tættere på dine mål.</p>
     <button class="btn btn-gold btn-lg" onclick="closeWkModal()">Tilbage til oversigt</button>
+  </div>
+</div>
+
+<!-- Installer-app hjælp — altid tilgængelig fra menuen, uafhængig af det bannere der kan blive lukket/overset -->
+<div class="modal-ov hidden" id="install-modal" onclick="if(event.target.id==='install-modal')closeInstallHelp()">
+  <div class="modal-box" style="text-align:left;max-width:440px">
+    <div class="modal-icon" style="text-align:center">📲</div>
+    <h2 style="text-align:center">Installer appen</h2>
+    <div style="background:rgba(201,168,76,.1);border:1px solid var(--bdr-g);border-radius:var(--r);padding:12px 14px;margin-bottom:20px;font-size:.85rem;color:var(--muted);line-height:1.5">
+      Åbnede du linket fra <b>Instagram, Facebook eller Messenger</b>? Tryk først på ⋯ / ⋮ øverst og vælg <b>"Åbn i browser"</b> — installation virker ikke inde i disse apps.
+    </div>
+    <div style="margin-bottom:18px">
+      <div style="font-weight:700;color:var(--gold);font-size:.85rem;margin-bottom:8px">📱 iPhone (Safari)</div>
+      <ol style="color:var(--muted);font-size:.88rem;line-height:1.7;padding-left:20px;margin:0">
+        <li>Tryk på <b>Del-ikonet</b> nederst (firkant med pil op)</li>
+        <li>Vælg <b>"Føj til hjemmeskærm"</b></li>
+        <li>Tryk <b>"Tilføj"</b> øverst til højre</li>
+      </ol>
+    </div>
+    <div style="margin-bottom:24px">
+      <div style="font-weight:700;color:var(--gold);font-size:.85rem;margin-bottom:8px">🤖 Android (Chrome)</div>
+      <ol style="color:var(--muted);font-size:.88rem;line-height:1.7;padding-left:20px;margin:0">
+        <li>Tryk på <b>⋮</b> (menuen øverst til højre)</li>
+        <li>Vælg <b>"Installer app"</b> eller <b>"Føj til startskærm"</b></li>
+        <li>Bekræft med <b>"Installer"</b></li>
+      </ol>
+    </div>
+    <button class="btn btn-gold btn-lg" style="width:100%" onclick="closeInstallHelp()">Luk</button>
   </div>
 </div>
 
@@ -2623,26 +2662,6 @@ function completeSet() {
 function nextEx() { if (WK.exIdx < WK.exercises.length - 1) { WK.exIdx++; updatePlayerUI(); } }
 function prevEx() { if (WK.exIdx > 0) { WK.exIdx--; updatePlayerUI(); } }
 
-// Swipe mellem øvelser i sessionsvisningen
-(function initSessionSwipe() {
-  const el = document.getElementById('player-box');
-  if (!el) return;
-  let x0 = null, y0 = null;
-  el.addEventListener('touchstart', e => {
-    // Swipe kun fra selve spillerkortet — ikke når man taster i vægt/reps/RPE-felter (undgår util. øvelsesskift midt i indtastning)
-    if (e.target.closest('.pl-setlog-slot, input, button, .set-log-area')) { x0 = null; y0 = null; return; }
-    x0 = e.touches[0].clientX;
-    y0 = e.touches[0].clientY;
-  }, { passive: true });
-  el.addEventListener('touchend', e => {
-    if (x0 === null) return;
-    const dx = e.changedTouches[0].clientX - x0;
-    const dy = e.changedTouches[0].clientY - y0;
-    if (Math.abs(dx) > 80 && Math.abs(dx) > Math.abs(dy) * 2) { dx < 0 ? nextEx() : prevEx(); }
-    x0 = null; y0 = null;
-  }, { passive: true });
-})();
-
 async function endWorkout() {
   clearInterval(timer.iv);
   document.getElementById('rest-box').classList.add('hidden');
@@ -3538,6 +3557,10 @@ if ('serviceWorker' in navigator) {
 let deferredInstallPrompt = null;
 const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+const isAndroid = () => /android/i.test(navigator.userAgent);
+// Links åbnet inde fra Instagram/Facebook/Messenger m.fl. kører i en indbygget browser uden "beforeinstallprompt"-support —
+// her skal klienten først have at vide at hun skal åbne siden i en rigtig browser, ellers virker ingen installationsvejledning.
+const isInAppBrowser = () => /FBAN|FBAV|Instagram|Messenger|Line\/|MicroMessenger|TikTok|Snapchat/i.test(navigator.userAgent);
 
 // Chrome/Android holder selv installations-dialogen tilbage indtil vi kalder .prompt() —
 // vi opsnapper den her og viser vores eget banner i stedet for browserens standard-popup.
@@ -3559,7 +3582,12 @@ function updateInstallBanner() {
   const sub = document.getElementById('install-banner-sub');
   const btn = document.getElementById('install-banner-btn');
 
-  if (deferredInstallPrompt) {
+  if (isInAppBrowser()) {
+    // Instagram/Facebook/Messenger-browseren kan hverken vise installations-prompten eller "Del"-menuen korrekt
+    sub.innerHTML = 'Åbn linket i <b>Safari/Chrome</b> først (tryk ⋯ eller ⋮ øverst og vælg "Åbn i browser"), så kan du installere appen.';
+    btn.classList.add('hidden');
+    el.classList.remove('hidden');
+  } else if (deferredInstallPrompt) {
     sub.textContent = 'Få hurtigere adgang og en bedre oplevelse — som en rigtig app.';
     btn.classList.remove('hidden');
     btn.onclick = async () => {
@@ -3573,9 +3601,21 @@ function updateInstallBanner() {
     sub.innerHTML = 'Tryk på <b>Del-ikonet</b> nederst i Safari (firkant med pil op), og vælg <b>"Føj til hjemmeskærm"</b>.';
     btn.classList.add('hidden');
     el.classList.remove('hidden');
+  } else if (isAndroid()) {
+    // Ingen "beforeinstallprompt" endnu (browser understøtter det ikke, eller kravene er ikke opfyldt) — giv manuel vej i stedet for at skjule banneret helt
+    sub.innerHTML = 'Tryk på <b>⋮</b> (menuen øverst til højre), og vælg <b>"Installer app"</b> eller <b>"Føj til startskærm"</b>.';
+    btn.classList.add('hidden');
+    el.classList.remove('hidden');
   } else {
-    el.classList.add('hidden'); // hverken installations-event (endnu) eller iOS — fx desktop-browser
+    el.classList.add('hidden'); // desktop-browser
   }
+}
+
+function showInstallHelp() {
+  document.getElementById('install-modal').classList.remove('hidden');
+}
+function closeInstallHelp() {
+  document.getElementById('install-modal').classList.add('hidden');
 }
 
 function dismissInstallBanner() {
