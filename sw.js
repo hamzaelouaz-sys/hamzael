@@ -32,3 +32,25 @@ self.addEventListener('fetch', e => {
     caches.match(e.request).then(cached => cached || fetch(e.request).catch(() => caches.match('/index.html')))
   );
 });
+
+// Push-notifikationer: udelukkende manuelt coach-udløste (se send-push Edge Function) — ingen
+// automatik. Klienten skal selv have aktiveret notifikationer via subscribeToPush() i index.html.
+self.addEventListener('push', e => {
+  let data = { title: 'Det Skarpe Liv', body: 'Du har en påmindelse fra din coach' };
+  try { if (e.data) data = e.data.json(); } catch (err) {}
+  e.waitUntil(self.registration.showNotification(data.title || 'Det Skarpe Liv', {
+    body: data.body || '',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    data: { url: data.url || '/' }
+  }));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = e.notification.data?.url || '/';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    for (const c of list) { if (c.url.includes(self.location.origin) && 'focus' in c) return c.focus(); }
+    if (self.clients.openWindow) return self.clients.openWindow(url);
+  }));
+});

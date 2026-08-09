@@ -238,6 +238,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .set-dots{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
 .set-dot{width:28px;height:6px;border-radius:3px;background:var(--surf3);transition:all var(--trans)}
 .set-dot.done{background:var(--gold)}
+.set-dot.skipped{background:var(--dim)}
 .player-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 
 /* Fuldskærms træningssession — kompound-selector for at sikre den altid vinder over .player-box-kortstilen og mobil-mediequeries uanset rækkefølge i filen */
@@ -275,6 +276,8 @@ body.sv-lock{overflow:hidden}
 .ex-sdots{display:flex;gap:5px}
 .ex-sdot{width:9px;height:9px;border-radius:50%;background:var(--surf3);transition:background var(--trans)}
 .ex-sdot.done{background:var(--gold)}
+.ex-sdot.skipped{background:var(--dim)}
+.player-skip-set-btn{display:block;margin:10px auto 0;background:none;border:none;color:var(--muted);font-size:.76rem;text-decoration:underline;cursor:pointer;padding:6px}
 .ex-video-btn{background:none;border:1px solid rgba(255,70,70,.35);border-radius:6px;color:#ff6b6b;font-size:.72rem;font-weight:600;padding:4px 8px;cursor:pointer;white-space:nowrap;letter-spacing:.04em;flex-shrink:0;transition:all var(--trans)}
 .ex-video-btn:hover{background:rgba(255,70,70,.12);border-color:rgba(255,70,70,.7)}
 .workout-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
@@ -707,6 +710,7 @@ body.sv-lock{overflow:hidden}
         <div>
           <h2 id="dash-greeting">God dag!</h2>
           <p id="dash-subtitle" style="color:var(--muted);font-size:.9rem;margin-top:4px">Her er din oversigt for i dag</p>
+          <div id="streak-badge" class="badge gold hidden" style="margin-top:10px">🔥 <span id="streak-count">0</span> <span id="streak-unit">uger i træk</span></div>
         </div>
         <!-- Hurtig genvej til at logge dagens vægt -->
         <button class="btn btn-gold" onclick="quickWeigh()" style="flex-shrink:0">⚖️ Vej dig nu</button>
@@ -721,6 +725,17 @@ body.sv-lock{overflow:hidden}
         </div>
         <button class="btn btn-gold btn-sm" id="install-banner-btn" style="flex-shrink:0">Installer</button>
         <button class="btn btn-outline btn-sm" onclick="dismissInstallBanner()" style="flex-shrink:0" aria-label="Luk">✕</button>
+      </div>
+      <!-- Push-notifikations-opt-in: kun manuelt coach-udløste påmindelser, aldrig automatiske -->
+      <div id="push-banner" class="hidden"
+           style="display:flex;align-items:center;gap:14px;padding:16px 20px;margin-bottom:22px;border-radius:var(--r2);background:linear-gradient(90deg,rgba(201,168,76,.16),rgba(201,168,76,.05));border:1px solid var(--bdr-g)">
+        <div style="width:42px;height:42px;border-radius:12px;background:rgba(201,168,76,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.3rem">🔔</div>
+        <div style="flex:1;min-width:220px">
+          <div style="font-weight:700;color:var(--gold);font-size:.95rem;margin-bottom:2px">Få påmindelser fra din coach</div>
+          <div style="color:var(--muted);font-size:.82rem">Aktivér notifikationer så du ikke går glip af beskeder fra Hamza.</div>
+        </div>
+        <button class="btn btn-gold btn-sm" onclick="subscribeToPush()" style="flex-shrink:0">Aktivér</button>
+        <button class="btn btn-outline btn-sm" onclick="dismissPushBanner()" style="flex-shrink:0" aria-label="Luk">✕</button>
       </div>
       <!-- Daglig vejnings-påmindelse: vises hvis der ikke er logget en vægt i dag -->
       <div id="weigh-reminder" class="hidden" onclick="navigate('progress')"
@@ -816,6 +831,19 @@ body.sv-lock{overflow:hidden}
           <p id="diet-desc" style="color:var(--muted);font-size:.88rem;margin-top:4px"></p>
         </div>
         <div class="diet-macros-row" id="diet-macro-badges"></div>
+      </div>
+      <!-- Daglig kostefterlevelse: ren logning, intet automatisk råd baseret på svaret -->
+      <div id="adherence-banner" class="hidden"
+           style="display:flex;align-items:center;gap:14px;padding:16px 20px;margin-bottom:22px;border-radius:var(--r2);background:linear-gradient(90deg,rgba(201,168,76,.16),rgba(201,168,76,.05));border:1px solid var(--bdr-g)">
+        <div style="width:42px;height:42px;border-radius:12px;background:rgba(201,168,76,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.3rem">🍽️</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;color:var(--gold);font-size:.95rem;margin-bottom:8px">Fulgte du planen i dag?</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-gold btn-sm" onclick="logAdherence('ja')">Ja</button>
+            <button class="btn btn-outline btn-sm" onclick="logAdherence('delvist')">Delvist</button>
+            <button class="btn btn-outline btn-sm" onclick="logAdherence('nej')">Nej</button>
+          </div>
+        </div>
       </div>
       <div id="meal-list"></div>
       <div id="micro-panel" class="hidden"></div>
@@ -1176,6 +1204,7 @@ body.sv-lock{overflow:hidden}
           <button class="btn btn-gold" onclick="completeSet()">Sæt udført ✓</button>
           <button class="btn btn-outline btn-sm" onclick="nextEx()">Næste &#8594;</button>
         </div>
+        <button class="player-skip-set-btn" onclick="skipSet()">Spring dette sæt over (fx smerte/tidsnød)</button>
       </div>
     </div>
   </div>
@@ -1271,6 +1300,11 @@ const SUPA_URL = 'https://rtcayuwapitueckgprzc.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0Y2F5dXdhcGl0dWVja2dwcnpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NzA2MzAsImV4cCI6MjA5MzA0NjYzMH0.uwMOD1w3uvQFGLCTpB8kkGPxM1z1pRvzF2VEANr3VME';
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
+// ─── Push-notifikationer (udfyld VAPID-nøgle efter Hamza har genereret et nøglepar — se send-push
+// Edge Function-vejledningen). Uden en gyldig nøgle her viser push-banneret sig aldrig (Notification-
+// tjekket i subscribeToPush() fejler blot stille), så det er sikkert at lade stå tomt indtil da.
+const VAPID_PUBLIC_KEY = 'REPLACE_ME_HAMZA';
+
 // ─── EmailJS (udfyld efter oprettelse på emailjs.com) ───────────────────────
 const EJS_PUBLIC_KEY          = 'a4KL2nPc1RL_GwdeM';
 const EJS_SERVICE_ID          = 'service_q707r9z';
@@ -1302,7 +1336,7 @@ const RT_CIRC = 439.82; // 2π×70
 let timer = { active: false, endsAt: 0, remainingWhenPaused: 0, total: 0, iv: null };
 
 // ─── Workout player ─────────────────────────────────────────────────────────
-let WK = { started: false, exIdx: 0, setsDone: [], exercises: [], syncedSets: new Set() };
+let WK = { started: false, exIdx: 0, setsDone: [], exercises: [], syncedSets: new Set(), skippedSets: new Set() };
 let currentTrainingDay = null;
 
 function saveCIDraft() {
@@ -1376,6 +1410,7 @@ function saveWKState() {
     exIdx: WK.exIdx,
     setsDone: WK.setsDone,
     syncedSets: Array.from(WK.syncedSets || []),
+    skippedSets: Array.from(WK.skippedSets || []),
     inputs
   }));
 }
@@ -1399,6 +1434,7 @@ function restoreWKState(selectedDay) {
   WK.exIdx = saved.exIdx || 0;
   WK.setsDone = saved.setsDone || WK.setsDone;
   WK.syncedSets = new Set(saved.syncedSets || []);
+  WK.skippedSets = new Set(saved.skippedSets || []);
   if (WK.started) {
     document.getElementById('btn-start-wk').classList.add('hidden');
     document.getElementById('btn-end-wk').classList.remove('hidden');
@@ -1407,7 +1443,7 @@ function restoreWKState(selectedDay) {
       if (sla) sla.style.display = 'block';
       for (let j = 0; j < (WK.setsDone[i] || 0); j++) {
         const dot = document.getElementById(`esd-${i}-${j}`);
-        if (dot) dot.classList.add('done');
+        if (dot) dot.classList.add(WK.skippedSets.has(`${i}-${j}`) ? 'skipped' : 'done');
       }
     });
     updatePlayerUI();
@@ -2050,6 +2086,8 @@ async function loadDashboard() {
   document.getElementById('s-weight').textContent = lastLog?.weight ?? '—';
 
   updateInstallBanner();
+  updatePushBanner();
+  updateWorkoutStreak();
 
   // Daglig vejnings-påmindelse: vis banner hvis der IKKE er logget en vægt i dag
   const reminderEl = document.getElementById('weigh-reminder');
@@ -2079,6 +2117,29 @@ async function loadDashboard() {
   }
   renderWeightChart('cw-dash', 'weight-dash');
   renderDashCheckins();
+}
+
+// Beregner og viser hvor mange uger i træk klienten har gennemført mindst én træning.
+// Ugebaseret (ikke kalenderdage), fordi resten af appen allerede tænker i uger (getWeekYear)
+// og workout_completions ikke gemmer en præcis dato — kun uge/år.
+async function updateWorkoutStreak() {
+  const badge = document.getElementById('streak-badge');
+  if (!badge || !S.user) return;
+  const { data } = await sb.from('workout_completions').select('week_number,year').eq('user_id', S.user.id);
+  if (!data?.length) { badge.classList.add('hidden'); return; }
+  const weeks = new Set(data.map(r => `${r.year}-${r.week_number}`));
+  const prevWeek = (week, year) => week > 1 ? { week: week - 1, year } : { week: 52, year: year - 1 };
+  let { week, year } = getWeekYear();
+  if (!weeks.has(`${year}-${week}`)) ({ week, year } = prevWeek(week, year));
+  let streak = 0;
+  while (weeks.has(`${year}-${week}`)) {
+    streak++;
+    ({ week, year } = prevWeek(week, year));
+  }
+  if (streak < 1) { badge.classList.add('hidden'); return; }
+  document.getElementById('streak-count').textContent = streak;
+  document.getElementById('streak-unit').textContent = streak === 1 ? 'uge i træk' : 'uger i træk';
+  badge.classList.remove('hidden');
 }
 
 function setMacroUI(macro, goal, consumed, color) {
@@ -2284,6 +2345,7 @@ async function loadDiet() {
         <h3 style="font-size:1.2rem;font-weight:700;margin-bottom:10px">${isActive ? 'Din kostplan er på vej' : 'Afventer coach-godkendelse'}</h3>
         <p style="color:var(--muted);max-width:380px;margin:0 auto;line-height:1.7">${msg}</p>
       </div>`;
+    document.getElementById('adherence-banner')?.classList.add('hidden');
     return;
   }
   const d = S.diet;
@@ -2342,6 +2404,26 @@ async function loadDiet() {
       </div>
     </div>`).join('');
   renderMicroPanel(d.meals);
+  checkAdherenceToday();
+}
+
+// Kostefterlevelse: ren daglig ja/delvist/nej-logning, ingen automatisk feedback baseret på svaret.
+async function checkAdherenceToday() {
+  const banner = document.getElementById('adherence-banner');
+  if (!banner || !S.user) return;
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const { data } = await sb.from('diet_adherence').select('status').eq('user_id', S.user.id).eq('date', todayStr).maybeSingle();
+  banner.classList.toggle('hidden', !!data);
+}
+
+async function logAdherence(status) {
+  const { week, year } = getWeekYear();
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const { error } = await sb.from('diet_adherence')
+    .upsert({ user_id: S.user.id, date: todayStr, week_number: week, year, status }, { onConflict: 'user_id,date' });
+  if (error) { toast('Kunne ikke gemme: ' + error.message, 'err'); return; }
+  document.getElementById('adherence-banner')?.classList.add('hidden');
+  toast('Logget ✓', 'ok');
 }
 
 function toggleMeal(i) {
@@ -2540,7 +2622,7 @@ function renderTrainingDay(selectedDay) {
   }).join('');
   exs.forEach((ex, i) => renderExerciseTrend(ex.name, 'spark-' + i));
 
-  WK = { started: false, exIdx: 0, setsDone: exs.map(() => 0), exercises: exs, syncedSets: new Set() };
+  WK = { started: false, exIdx: 0, setsDone: exs.map(() => 0), exercises: exs, syncedSets: new Set(), skippedSets: new Set() };
   document.getElementById('btn-start-wk').classList.remove('hidden');
   document.getElementById('btn-end-wk').classList.add('hidden');
   updateSessionStatusBar();
@@ -2639,8 +2721,10 @@ function updatePlayerUI() {
   document.getElementById('pl-name').textContent = ex.name;
   document.getElementById('pl-detail').textContent = `${ex.sets} sæt × ${ex.reps} reps · ${ex.weight}`;
   const done = WK.setsDone[WK.exIdx];
-  document.getElementById('pl-dots').innerHTML = Array.from({ length: ex.sets }, (_, i) =>
-    `<div class="set-dot${i < done ? ' done' : ''}"></div>`).join('');
+  document.getElementById('pl-dots').innerHTML = Array.from({ length: ex.sets }, (_, i) => {
+    const cls = i >= done ? '' : WK.skippedSets?.has(`${WK.exIdx}-${i}`) ? ' skipped' : ' done';
+    return `<div class="set-dot${cls}"></div>`;
+  }).join('');
 
   // Flyt den aktuelle øvelses log-inputs ind i sessionsvisningen (flytter de rigtige DOM-noder — sw-i-j/sr-i-j mister aldrig deres værdi eller id)
   const slot = document.getElementById('pl-setlog-slot');
@@ -2707,6 +2791,34 @@ function completeSet() {
 
 function nextEx() { if (WK.exIdx < WK.exercises.length - 1) { WK.exIdx++; updatePlayerUI(); } }
 function prevEx() { if (WK.exIdx > 0) { WK.exIdx--; updatePlayerUI(); } }
+
+// Markerer et sæt som bevidst sprunget over (fx smerte/tidsnød) i stedet for bare at lade det stå
+// tomt — så det er tydeligt for både klient og coach at sættet blev fravalgt, ikke bare glemt.
+// Gemmes ikke i strength_logs (intet løft blev udført), kun i den lokale sessions-tilstand.
+function skipSet() {
+  const ex = WK.exercises[WK.exIdx];
+  if (!ex) return;
+  haptic(10);
+  const exIdx = WK.exIdx;
+  WK.setsDone[exIdx]++;
+  const done = WK.setsDone[exIdx];
+  if (!WK.skippedSets) WK.skippedSets = new Set();
+  WK.skippedSets.add(`${exIdx}-${done - 1}`);
+  const dot = document.getElementById(`esd-${exIdx}-${done - 1}`);
+  if (dot) dot.classList.add('skipped');
+  updatePlayerUI();
+  saveWKState();
+
+  if (done < ex.sets) {
+    toast('Sæt sprunget over', 'ok');
+  } else if (WK.exIdx < WK.exercises.length - 1) {
+    toast(`${ex.name} gennemgået`, 'ok');
+    WK.exIdx++;
+    updatePlayerUI();
+  } else {
+    toast('Alle øvelser gennemgået! Klik "Afslut træning"', 'ok');
+  }
+}
 
 // Gemmer ét sæt til Supabase, så snart det markeres udført — i stedet for kun ved "Afslut træning".
 // Betyder at data ikke går tabt hvis appen bliver afbrudt undervejs, og at "Sidst:"-hintet er
@@ -3306,11 +3418,13 @@ async function loadPhotos() {
     gallery.innerHTML = '<div style="color:var(--muted);font-size:.85rem">Ingen fotos endnu – upload dit første!</div>';
     return;
   }
-  gallery.innerHTML = files.map(f => {
-    const { data: { publicUrl } } = sb.storage.from(BUCKET).getPublicUrl(`${uid}/${f.name}`);
+  // Bucket er privat — signerede URLs kræver et async kald pr. fil (1 times gyldighed)
+  const signed = await Promise.all(files.map(f => sb.storage.from(BUCKET).createSignedUrl(`${uid}/${f.name}`, 3600)));
+  gallery.innerHTML = files.map((f, i) => {
+    const url = signed[i]?.data?.signedUrl || '';
     const label = f.name.replace(/\.[^.]+$/, '').replace(/_\d+$/, '').replace(/_/g, ' ');
     return `<div style="display:flex;flex-direction:column;gap:5px">
-      <img src="${publicUrl}" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:12px;border:1px solid var(--bdr);background:var(--surf2)" loading="lazy">
+      <img src="${url}" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:12px;border:1px solid var(--bdr);background:var(--surf2)" loading="lazy">
       <div style="font-size:.75rem;color:var(--muted);text-align:center;text-transform:capitalize">${label}</div>
     </div>`;
   }).join('');
@@ -3704,6 +3818,48 @@ function closeInstallHelp() {
 function dismissInstallBanner() {
   localStorage.setItem('dsl_install_dismissed', '1');
   document.getElementById('install-banner')?.classList.add('hidden');
+}
+
+// ─── Push-notifikationer ─────────────────────────────────────────────────────
+// Udelukkende manuelt coach-udløste påmindelser (se coach dashboards "🔔 Send påmindelse") —
+// ingen automatik/planlægning. Klienten skal selv aktivt aktivere notifikationer.
+function updatePushBanner() {
+  const el = document.getElementById('push-banner');
+  if (!el || !S.user) return;
+  const noKey = !VAPID_PUBLIC_KEY || VAPID_PUBLIC_KEY === 'REPLACE_ME_HAMZA';
+  if (noKey || localStorage.getItem('dsl_push_dismissed') || !('PushManager' in window) || Notification.permission === 'granted') {
+    el.classList.add('hidden');
+    return;
+  }
+  el.classList.remove('hidden');
+}
+
+function dismissPushBanner() {
+  localStorage.setItem('dsl_push_dismissed', '1');
+  document.getElementById('push-banner')?.classList.add('hidden');
+}
+
+async function subscribeToPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) { toast('Push understøttes ikke i denne browser', 'err'); return; }
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') { toast('Notifikationer blev ikke aktiveret', 'err'); return; }
+  const reg = await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
+  const j = sub.toJSON();
+  const { error } = await sb.from('push_subscriptions')
+    .upsert({ user_id: S.user.id, endpoint: j.endpoint, keys: j.keys }, { onConflict: 'user_id,endpoint' });
+  if (error) { toast('Kunne ikke gemme abonnement: ' + error.message, 'err'); return; }
+  localStorage.setItem('dsl_push_dismissed', '1');
+  document.getElementById('push-banner')?.classList.add('hidden');
+  toast('Notifikationer aktiveret ✓', 'ok');
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
 }
 
 </script>
