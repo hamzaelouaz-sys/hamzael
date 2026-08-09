@@ -1286,7 +1286,7 @@ const RT_CIRC = 439.82; // 2π×70
 let timer = { active: false, endsAt: 0, remainingWhenPaused: 0, total: 0, iv: null };
 
 // ─── Workout player ─────────────────────────────────────────────────────────
-let WK = { started: false, exIdx: 0, setsDone: [], exercises: [] };
+let WK = { started: false, exIdx: 0, setsDone: [], exercises: [], syncedSets: new Set() };
 let currentTrainingDay = null;
 
 function saveCIDraft() {
@@ -1359,6 +1359,7 @@ function saveWKState() {
     started: WK.started,
     exIdx: WK.exIdx,
     setsDone: WK.setsDone,
+    syncedSets: Array.from(WK.syncedSets || []),
     inputs
   }));
 }
@@ -1381,6 +1382,7 @@ function restoreWKState(selectedDay) {
   WK.started = saved.started;
   WK.exIdx = saved.exIdx || 0;
   WK.setsDone = saved.setsDone || WK.setsDone;
+  WK.syncedSets = new Set(saved.syncedSets || []);
   if (WK.started) {
     document.getElementById('btn-start-wk').classList.add('hidden');
     document.getElementById('btn-end-wk').classList.remove('hidden');
@@ -2444,6 +2446,13 @@ function switchDay(dayName) {
 }
 
 function renderTrainingDay(selectedDay) {
+  // Session allerede aktiv i hukommelsen for denne dag — undgå at bygge øvelseslisten om.
+  // Sker ellers hvis loadTraining() bliver kaldt igen midt i en træning (fx fordi Supabase
+  // fornyer login-token når mobilen låses op mellem sæt, hvilket trigger boot() igen uden at
+  // JS-hukommelsen faktisk er tabt). En genopbygning her nulstiller WK og skaber dubletter af
+  // DOM-noden for øvelsen der er flyttet ind i fuldskærms-playeren (updatePlayerUI flytter den
+  // fysisk, ikke en kopi) — det er det der viser sig som felter der "forsvinder og kommer igen".
+  if (WK.started && currentTrainingDay === selectedDay && WK.exercises?.length) return;
   currentTrainingDay = selectedDay;
   const wd = S.workout;
   const day = wd.days?.find(d => d.day === selectedDay) || null;
@@ -2513,7 +2522,7 @@ function renderTrainingDay(selectedDay) {
   }).join('');
   exs.forEach((ex, i) => renderExerciseTrend(ex.name, 'spark-' + i));
 
-  WK = { started: false, exIdx: 0, setsDone: exs.map(() => 0), exercises: exs };
+  WK = { started: false, exIdx: 0, setsDone: exs.map(() => 0), exercises: exs, syncedSets: new Set() };
   document.getElementById('btn-start-wk').classList.remove('hidden');
   document.getElementById('btn-end-wk').classList.add('hidden');
   restoreWKState(selectedDay);
@@ -2638,12 +2647,14 @@ function completeSet() {
   const ex = WK.exercises[WK.exIdx];
   if (!ex) return;
   haptic(15);
-  WK.setsDone[WK.exIdx]++;
-  const done = WK.setsDone[WK.exIdx];
-  const dot = document.getElementById(`esd-${WK.exIdx}-${done - 1}`);
+  const exIdx = WK.exIdx;
+  WK.setsDone[exIdx]++;
+  const done = WK.setsDone[exIdx];
+  const dot = document.getElementById(`esd-${exIdx}-${done - 1}`);
   if (dot) dot.classList.add('done');
   updatePlayerUI();
   saveWKState();
+  syncSetToServer(exIdx, done - 1, ex);
 
   if (done < ex.sets) {
     startRestTimer(ex.rest || 90);
@@ -2661,6 +2672,40 @@ function completeSet() {
 
 function nextEx() { if (WK.exIdx < WK.exercises.length - 1) { WK.exIdx++; updatePlayerUI(); } }
 function prevEx() { if (WK.exIdx > 0) { WK.exIdx--; updatePlayerUI(); } }
+
+// Gemmer ét sæt til Supabase, så snart det markeres udført — i stedet for kun ved "Afslut træning".
+// Betyder at data ikke går tabt hvis appen bliver afbrudt undervejs, og at "Sidst:"-hintet er
+// retvisende hvis klienten forlader og genåbner siden midt i en session.
+async function syncSetToServer(i, j, ex) {
+  const key = `${i}-${j}`;
+  if (WK.syncedSets?.has(key)) return;
+  const wEl = document.getElementById(`sw-${i}-${j}`);
+  const kg = parseFloat(wEl?.value);
+  if (isNaN(kg) || kg <= 0) return; // intet vægt-tal indtastet endnu — ingenting at gemme
+  const rEl = document.getElementById(`sr-${i}-${j}`);
+  const qEl = document.getElementById(`sq-${i}-${j}`);
+  const reps = parseInt(rEl?.value);
+  const rpe = parseInt(qEl?.value);
+  const { week, year } = getWeekYear();
+  const { error } = await sb.from('strength_logs').insert({
+    user_id: S.user.id,
+    exercise_name: ex.name,
+    day_name: currentTrainingDay,
+    week_number: week,
+    year,
+    set_number: j + 1,
+    weight_kg: kg,
+    reps: isNaN(reps) ? null : reps,
+    rpe: (!isNaN(rpe) && rpe >= 1 && rpe <= 10) ? rpe : null,
+  });
+  if (!error) {
+    if (!WK.syncedSets) WK.syncedSets = new Set();
+    WK.syncedSets.add(key);
+    saveWKState();
+  } else {
+    console.error('[syncSetToServer] fejl, forsøges igen ved afslutning:', error);
+  }
+}
 
 async function endWorkout() {
   clearInterval(timer.iv);
@@ -2688,10 +2733,13 @@ async function endWorkout() {
     }
   }
 
-  // Gem styrkelogfiler
+  // Gem styrkelogfiler — sæt der allerede er syncet løbende via syncSetToServer() springes over
+  // (undgår dubletter); dette er nu kun et sikkerhedsnet for sæt der blev udfyldt men aldrig
+  // markeret "udført" undervejs.
   const strengthRows = [];
   WK.exercises.forEach((ex, i) => {
     for (let j = 0; j < ex.sets; j++) {
+      if (WK.syncedSets?.has(`${i}-${j}`)) continue;
       const wEl = document.getElementById(`sw-${i}-${j}`);
       const rEl = document.getElementById(`sr-${i}-${j}`);
       const qEl = document.getElementById(`sq-${i}-${j}`);
