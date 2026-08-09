@@ -211,6 +211,15 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .wk-name{font-family:var(--serif);font-size:1.7rem;font-weight:600;margin-bottom:6px;letter-spacing:-.01em;position:relative}
 .wk-meta{color:var(--muted);font-size:.86rem;position:relative}
 
+/* Permanent "session i gang"-banner — synlig uanset om fuldskærmsvisningen er åben eller minimeret,
+   så det aldrig er tvivlsomt om man er midt i en træning. */
+.wk-session-status{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(217,199,167,.14),rgba(217,199,167,.04));border:1px solid var(--bdr-strong);border-radius:var(--r2);padding:12px 16px;margin-bottom:16px;cursor:pointer;transition:background .15s}
+.wk-session-status:active{background:rgba(217,199,167,.18)}
+.wk-session-status .wss-dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0;animation:wssPulse 1.6s ease-in-out infinite}
+.wk-session-status .wss-txt{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.82rem;font-weight:600;color:var(--txt)}
+.wk-session-status .wss-arrow{color:var(--gold);font-size:.68rem;font-weight:700;letter-spacing:.04em;flex-shrink:0}
+@keyframes wssPulse{0%,100%{opacity:1}50%{opacity:.3}}
+
 .rest-timer-box{background:var(--surf);border:1px solid var(--bdr-g);border-radius:var(--r2);padding:28px;text-align:center;margin-bottom:20px;box-shadow:var(--sh-card)}
 .rt-label{font-size:.68rem;color:var(--gold);font-weight:700;letter-spacing:.22em;text-transform:uppercase;margin-bottom:18px}
 .rt-ring{width:160px;height:160px;margin:0 auto 16px;position:relative}
@@ -368,7 +377,9 @@ body.sv-lock{overflow:hidden}
 
 /* ── Set log ── */
 .set-log-area{padding:12px 22px 8px;border-top:1px solid var(--bdr);background:var(--surf2)}
-.set-log-prev{font-size:.72rem;color:var(--gold);margin-bottom:8px;font-family:var(--serif);font-style:italic}
+.set-log-prev{font-size:.72rem;color:var(--muted);margin-bottom:10px;font-family:var(--serif);font-style:italic;display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
+.slp-lbl{display:inline-block;background:var(--surf2);color:var(--muted);border:1px solid var(--bdr);border-radius:5px;padding:1px 7px;font-size:.6rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;font-style:normal;font-family:var(--sans,inherit)}
+.slp-today-lbl{font-size:.62rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin:12px 0 6px 2px;padding-top:10px;border-top:1px dashed var(--bdr-g)}
 .set-log-row{display:flex;align-items:center;gap:7px;margin-bottom:7px;font-size:.82rem}
 .set-log-lbl{width:36px;color:var(--muted);font-weight:700;flex-shrink:0;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase}
 .set-inp{background:var(--surf);border:1px solid var(--bdr);border-radius:8px;padding:6px 10px;color:var(--txt);font-size:.86rem;width:72px;text-align:center;outline:none;-moz-appearance:textfield;font-family:inherit;font-weight:500}
@@ -817,6 +828,11 @@ body.sv-lock{overflow:hidden}
         <div class="wk-day-lbl" id="wk-day-lbl">Dagens træning</div>
         <div class="wk-name" id="wk-name">Indlæser...</div>
         <div class="wk-meta" id="wk-meta"></div>
+      </div>
+      <div id="wk-session-status" class="wk-session-status hidden" onclick="updatePlayerUI(); openSessionView();">
+        <span class="wss-dot"></span>
+        <span class="wss-txt" id="wk-session-status-txt"></span>
+        <span class="wss-arrow">ÅBN ▸</span>
       </div>
       <!-- Muskel anatomi diagram -->
       <div id="anatomy-section" class="anatomy-section hidden">
@@ -2483,6 +2499,7 @@ function renderTrainingDay(selectedDay) {
       </div>` : ''}`;
     document.getElementById('btn-start-wk').classList.add('hidden');
     document.getElementById('btn-end-wk').classList.add('hidden');
+    document.getElementById('wk-session-status')?.classList.add('hidden');
     const anat = document.getElementById('anatomy-section');
     if (anat) { anat.classList.remove('hidden'); updateMuscleMap([]); }
     return;
@@ -2494,7 +2511,7 @@ function renderTrainingDay(selectedDay) {
   const exs = day.exercises || [];
   document.getElementById('ex-list').innerHTML = exs.map((ex, i) => {
     const prev = S.strengthLogs?.[ex.name];
-    const prevHtml = prev?.length ? `<div class="set-log-prev">Sidst: ${prev.map(s => `${s.kg}kg × ${s.reps}`).join(' · ')}</div>` : '';
+    const prevHtml = prev?.length ? `<div class="set-log-prev"><span class="slp-lbl">Sidst</span> ${prev.map(s => `${s.kg}kg × ${s.reps}`).join(' · ')}</div>` : '';
     const setInputs = Array.from({ length: ex.sets }, (_, j) => `
       <div class="set-log-row">
         <span class="set-log-lbl">Sæt ${j+1}</span>
@@ -2516,6 +2533,7 @@ function renderTrainingDay(selectedDay) {
       <div class="set-log-area" id="sla-${i}" style="display:none">
         ${prevHtml}
         <canvas id="spark-${i}" class="ex-spark" width="220" height="34"></canvas>
+        <div class="slp-today-lbl">I dag</div>
         ${setInputs}
       </div>
     </div>`;
@@ -2525,6 +2543,7 @@ function renderTrainingDay(selectedDay) {
   WK = { started: false, exIdx: 0, setsDone: exs.map(() => 0), exercises: exs, syncedSets: new Set() };
   document.getElementById('btn-start-wk').classList.remove('hidden');
   document.getElementById('btn-end-wk').classList.add('hidden');
+  updateSessionStatusBar();
   restoreWKState(selectedDay);
   const anat = document.getElementById('anatomy-section');
   if (anat) { anat.classList.remove('hidden'); updateMuscleMap(exs); }
@@ -2641,6 +2660,22 @@ function updatePlayerUI() {
     c.classList.toggle('active', i === WK.exIdx);
     c.classList.toggle('done', WK.setsDone[i] >= (WK.exercises[i]?.sets || 0) && i !== WK.exIdx);
   });
+  updateSessionStatusBar();
+}
+
+// Holder et permanent, synligt banner opdateret ("Træning i gang · Sæt X/Y · øvelse") uanset om
+// fuldskærms-playeren er åben eller minimeret (closeSessionView) — så det aldrig er tvivlsomt om
+// man er i gang med en session. Klik på banneret genåbner fuldskærmsvisningen.
+function updateSessionStatusBar() {
+  const bar = document.getElementById('wk-session-status');
+  if (!bar) return;
+  if (!WK.started || !WK.exercises?.length) { bar.classList.add('hidden'); return; }
+  const ex = WK.exercises[WK.exIdx];
+  const totalDone = WK.setsDone.reduce((a, b) => a + b, 0);
+  const totalSets = WK.exercises.reduce((a, e) => a + (e.sets || 0), 0);
+  document.getElementById('wk-session-status-txt').textContent =
+    `Træning i gang · Sæt ${totalDone}/${totalSets}${ex ? ' · ' + ex.name : ''}`;
+  bar.classList.remove('hidden');
 }
 
 function completeSet() {
