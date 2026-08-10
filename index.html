@@ -379,17 +379,24 @@ body.sv-lock{overflow:hidden}
 .day-pill.selected.done{background:rgba(92,178,133,.08)}
 
 /* ── Set log ── */
-.set-log-area{padding:12px 22px 8px;border-top:1px solid var(--bdr);background:var(--surf2)}
+.ex-prev-hint{font-size:.74rem;color:var(--gold);margin-top:5px;font-family:var(--serif);font-style:italic;display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
+.set-log-area{padding:12px 16px 8px;border-top:1px solid var(--bdr);background:var(--surf2);max-width:100%;overflow:hidden}
 .set-log-prev{font-size:.72rem;color:var(--muted);margin-bottom:10px;font-family:var(--serif);font-style:italic;display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
 .slp-lbl{display:inline-block;background:var(--surf2);color:var(--muted);border:1px solid var(--bdr);border-radius:5px;padding:1px 7px;font-size:.6rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;font-style:normal;font-family:var(--sans,inherit)}
 .slp-today-lbl{font-size:.62rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin:12px 0 6px 2px;padding-top:10px;border-top:1px dashed var(--bdr-g)}
-.set-log-row{display:flex;align-items:center;gap:7px;margin-bottom:7px;font-size:.82rem}
-.set-log-lbl{width:36px;color:var(--muted);font-weight:700;flex-shrink:0;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase}
-.set-inp{background:var(--surf);border:1px solid var(--bdr);border-radius:8px;padding:6px 10px;color:var(--txt);font-size:.86rem;width:72px;text-align:center;outline:none;-moz-appearance:textfield;font-family:inherit;font-weight:500}
+.set-log-row{display:grid;grid-template-columns:16px minmax(0,1fr) 8px minmax(0,1fr) minmax(0,48px) 22px;align-items:center;gap:5px;margin-bottom:7px;font-size:.82rem;transition:opacity .2s ease}
+.set-log-row.locked{opacity:.55}
+.set-log-row.locked.skipped{opacity:.38}
+.set-log-lbl{color:var(--muted);font-weight:700;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase}
+.set-inp{background:var(--surf);border:1px solid var(--bdr);border-radius:8px;padding:6px 4px;color:var(--txt);font-size:.86rem;width:100%;min-width:0;text-align:center;outline:none;-moz-appearance:textfield;font-family:inherit;font-weight:500}
 .set-inp::-webkit-inner-spin-button,.set-inp::-webkit-outer-spin-button{-webkit-appearance:none}
 .set-inp:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(217,199,167,.15)}
-.set-inp-x{color:var(--dim);font-size:.78rem}
-.set-inp-rpe{width:56px;color:var(--gold)}
+.set-inp.prefilled{color:var(--dim);font-style:italic}
+.set-inp:read-only{background:var(--surf3);color:var(--dim);border-color:var(--bdr);cursor:default}
+.set-inp-x{color:var(--dim);font-size:.78rem;text-align:center}
+.set-inp-rpe{color:var(--gold)}
+.set-edit-btn{background:none;border:none;color:var(--muted);font-size:.85rem;cursor:pointer;padding:0;line-height:1;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:6px}
+.set-edit-btn:hover{color:var(--gold);background:var(--surf3)}
 .ex-spark{display:block;width:100%;max-width:220px;height:34px;margin:2px 0 10px}
 
 /* ===== RESPONSIVE ===== */
@@ -453,8 +460,9 @@ body.sv-lock{overflow:hidden}
   #main{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
   .page-wrap{padding:16px 14px calc(80px + env(safe-area-inset-bottom))}
   .toast{bottom:calc(80px + env(safe-area-inset-bottom));right:14px;left:14px;text-align:center}
-  .set-inp{width:80px;padding:10px;font-size:.95rem}
-  .set-log-row{gap:10px;margin-bottom:10px}
+  .set-inp{padding:8px 4px;font-size:.92rem}
+  .set-log-row{gap:4px;margin-bottom:8px;grid-template-columns:14px minmax(0,1fr) 6px minmax(0,1fr) minmax(0,42px) 20px}
+  .set-log-area{padding:10px 12px 6px}
   .ex-card{flex-wrap:wrap;gap:10px;padding:16px}
   .ex-sdots{width:100%;order:3}
   .modal-box{padding:32px 22px}
@@ -1405,7 +1413,7 @@ function saveWKState() {
   });
   localStorage.setItem('wk_state_' + S.user.id, JSON.stringify({
     day: currentTrainingDay,
-    date: new Date().toISOString().slice(0, 10),
+    savedAt: Date.now(),
     started: WK.started,
     exIdx: WK.exIdx,
     setsDone: WK.setsDone,
@@ -1425,10 +1433,14 @@ function restoreWKState(selectedDay) {
   if (!raw) return;
   let saved;
   try { saved = JSON.parse(raw); } catch { return; }
-  if (saved.day !== selectedDay || saved.date !== new Date().toISOString().slice(0, 10)) return;
+  // Sammenligner tidsforskel i stedet for kalenderdato-string — en session der fx starter kl. 23:50
+  // og fortsætter til 00:10 skal ikke miste indtastede tal bare fordi datoen er skiftet undervejs.
+  // 20 timers grænse er stadig nok til at forkaste en reelt forladt/gammel session.
+  const savedAt = saved.savedAt ?? (saved.date ? new Date(saved.date).getTime() : 0);
+  if (saved.day !== selectedDay || !savedAt || Date.now() - savedAt > 20 * 60 * 60 * 1000) return;
   Object.entries(saved.inputs || {}).forEach(([id, val]) => {
     const el = document.getElementById(id);
-    if (el) el.value = val;
+    if (el) { el.value = val; el.classList.remove('prefilled'); }
   });
   WK.started = saved.started;
   WK.exIdx = saved.exIdx || 0;
@@ -1442,14 +1454,69 @@ function restoreWKState(selectedDay) {
       const sla = document.getElementById('sla-' + i);
       if (sla) sla.style.display = 'block';
       for (let j = 0; j < (WK.setsDone[i] || 0); j++) {
+        const wasSkipped = WK.skippedSets.has(`${i}-${j}`);
         const dot = document.getElementById(`esd-${i}-${j}`);
-        if (dot) dot.classList.add(WK.skippedSets.has(`${i}-${j}`) ? 'skipped' : 'done');
+        if (dot) dot.classList.add(wasSkipped ? 'skipped' : 'done');
+        lockSetRow(i, j, wasSkipped);
       }
     });
     updatePlayerUI();
     openSessionView();
     toast('Træning genoprettet – fortsæt hvor du slap', 'ok');
   }
+}
+
+// Fjerner "prefilled"-visningen (sidste gangs tal) i det øjeblik klienten selv rører feltet —
+// derefter er det klientens eget indtastede tal, ikke længere bare en reference til sidst.
+function onSetInput(el) {
+  el.classList.remove('prefilled');
+  saveWKState();
+}
+
+function lockSetRow(i, j, skipped) {
+  const row = document.getElementById(`slr-${i}-${j}`);
+  if (!row) return;
+  row.classList.add('locked');
+  row.classList.toggle('skipped', !!skipped);
+  ['sw', 'sr', 'sq'].forEach(p => {
+    const el = document.getElementById(`${p}-${i}-${j}`);
+    if (el) el.readOnly = true;
+  });
+  const btn = document.getElementById(`seb-${i}-${j}`);
+  if (btn) {
+    btn.classList.remove('hidden');
+    btn.textContent = '✎';
+    btn.title = 'Ret sæt';
+    btn.onclick = () => unlockSet(i, j);
+  }
+}
+
+// Låser et allerede udført sæt op til rettelse. Fjerner det fra syncedSets, så en rettelse
+// rent faktisk bliver gemt til Supabase igen (syncSetToServer springer ellers sættet over
+// fordi det tror det allerede er gemt) — bekræftes via confirmSetEdit().
+function unlockSet(i, j) {
+  const row = document.getElementById(`slr-${i}-${j}`);
+  if (!row) return;
+  row.classList.remove('locked');
+  ['sw', 'sr', 'sq'].forEach(p => {
+    const el = document.getElementById(`${p}-${i}-${j}`);
+    if (el) el.readOnly = false;
+  });
+  WK.syncedSets?.delete(`${i}-${j}`);
+  const btn = document.getElementById(`seb-${i}-${j}`);
+  if (btn) {
+    btn.textContent = '✓';
+    btn.title = 'Gem rettelse';
+    btn.onclick = () => confirmSetEdit(i, j);
+  }
+}
+
+function confirmSetEdit(i, j) {
+  const ex = WK.exercises[i];
+  const skipped = WK.skippedSets?.has(`${i}-${j}`);
+  lockSetRow(i, j, skipped);
+  saveWKState();
+  if (ex && !skipped) syncSetToServer(i, j, ex);
 }
 
 // ─── Onboarding ─────────────────────────────────────────────────────────────
@@ -2593,21 +2660,29 @@ function renderTrainingDay(selectedDay) {
   const exs = day.exercises || [];
   document.getElementById('ex-list').innerHTML = exs.map((ex, i) => {
     const prev = S.strengthLogs?.[ex.name];
+    const prevHint = prev?.length ? `<div class="ex-prev-hint"><span class="slp-lbl">Sidst</span> ${prev.map(s => `${s.kg}kg×${s.reps}`).join(' · ')}</div>` : '';
     const prevHtml = prev?.length ? `<div class="set-log-prev"><span class="slp-lbl">Sidst</span> ${prev.map(s => `${s.kg}kg × ${s.reps}`).join(' · ')}</div>` : '';
-    const setInputs = Array.from({ length: ex.sets }, (_, j) => `
-      <div class="set-log-row">
-        <span class="set-log-lbl">Sæt ${j+1}</span>
-        <input id="sw-${i}-${j}" class="set-inp" type="number" step="0.5" placeholder="kg" min="0" oninput="saveWKState()">
+    const setInputs = Array.from({ length: ex.sets }, (_, j) => {
+      const prevSet = prev?.find(s => s.set === j + 1);
+      const pKg = prevSet?.kg ?? '';
+      const pReps = prevSet?.reps ?? '';
+      return `
+      <div class="set-log-row" id="slr-${i}-${j}">
+        <span class="set-log-lbl">${j+1}</span>
+        <input id="sw-${i}-${j}" class="set-inp${pKg !== '' ? ' prefilled' : ''}" type="number" step="0.5" placeholder="kg" min="0" value="${pKg}" oninput="onSetInput(this)">
         <span class="set-inp-x">×</span>
-        <input id="sr-${i}-${j}" class="set-inp" type="number" placeholder="reps" min="0" oninput="saveWKState()">
+        <input id="sr-${i}-${j}" class="set-inp${pReps !== '' ? ' prefilled' : ''}" type="number" placeholder="reps" min="0" value="${pReps}" oninput="onSetInput(this)">
         <input id="sq-${i}-${j}" class="set-inp set-inp-rpe" type="number" placeholder="RPE" min="1" max="10" step="1" oninput="saveWKState()" title="RPE (valgfri, 1-10) — hvor hårdt føltes sættet">
-      </div>`).join('');
+        <button type="button" class="set-edit-btn hidden" id="seb-${i}-${j}" title="Ret sæt" aria-label="Ret sæt">✎</button>
+      </div>`;
+    }).join('');
     const vidBtn = ex.video_url ? `<button class="ex-video-btn" onclick="openVidModal(event,'${ex.name.replace(/'/g,"\\'")}','${ex.video_url.replace(/'/g,"\\'")}')">▶ Se video</button>` : '';
     return `<div class="ex-card" id="exc-${i}">
       <div class="ex-num" id="exn-${i}">${i + 1}</div>
       <div class="ex-info">
         <div class="ex-nm">${ex.name} ${vidBtn}</div>
         <div class="ex-det">${ex.sets} sæt &times; ${ex.reps} reps &bull; ${ex.weight} &bull; Hvile: ${ex.rest}s</div>
+        ${prevHint}
       </div>
       <div class="ex-sdots" id="esd-${i}">
         ${Array.from({ length: ex.sets }, (_, j) => `<div class="ex-sdot" id="esd-${i}-${j}"></div>`).join('')}
@@ -2771,6 +2846,7 @@ function completeSet() {
   const done = WK.setsDone[exIdx];
   const dot = document.getElementById(`esd-${exIdx}-${done - 1}`);
   if (dot) dot.classList.add('done');
+  lockSetRow(exIdx, done - 1);
   updatePlayerUI();
   saveWKState();
   syncSetToServer(exIdx, done - 1, ex);
@@ -2806,6 +2882,7 @@ function skipSet() {
   WK.skippedSets.add(`${exIdx}-${done - 1}`);
   const dot = document.getElementById(`esd-${exIdx}-${done - 1}`);
   if (dot) dot.classList.add('skipped');
+  lockSetRow(exIdx, done - 1, true);
   updatePlayerUI();
   saveWKState();
 
