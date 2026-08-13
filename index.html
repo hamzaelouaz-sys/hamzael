@@ -2801,10 +2801,18 @@ function updatePlayerUI() {
     return `<div class="set-dot${cls}"></div>`;
   }).join('');
 
-  // Flyt den aktuelle øvelses log-inputs ind i sessionsvisningen (flytter de rigtige DOM-noder — sw-i-j/sr-i-j mister aldrig deres værdi eller id)
+  // Flyt den aktuelle øvelses log-inputs ind i sessionsvisningen (flytter de rigtige DOM-noder — sw-i-j/sr-i-j mister aldrig deres værdi eller id).
+  // Vigtigt: en evt. tidligere øvelses set-log-blok skal flyttes TILBAGE til sit eget ex-card,
+  // ikke overskrives med innerHTML='' — det destruerede DOM-noden (og dermed indtastede tal)
+  // permanent, så tallene forsvandt og aldrig blev gemt, hvis man gik frem/tilbage mellem øvelser.
   const slot = document.getElementById('pl-setlog-slot');
+  const prevSla = slot?.firstElementChild;
+  if (prevSla && prevSla.id !== 'sla-' + WK.exIdx) {
+    const prevCard = document.getElementById('exc-' + prevSla.id.slice(4));
+    if (prevCard) prevCard.appendChild(prevSla);
+  }
   const sla = document.getElementById('sla-' + WK.exIdx);
-  if (slot && sla) { slot.innerHTML = ''; slot.appendChild(sla); sla.style.display = 'block'; }
+  if (slot && sla) { slot.appendChild(sla); sla.style.display = 'block'; }
 
   const prog = document.getElementById('sv-progress');
   if (prog) {
