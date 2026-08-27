@@ -745,6 +745,16 @@ body.sv-lock{overflow:hidden}
         </div>
         <div style="color:var(--gold);font-size:1.2rem;flex-shrink:0">→</div>
       </div>
+      <!-- Bødekasse: kun synlig hvis coachen har slået den til for denne klient -->
+      <div id="fine-box-banner" class="hidden" onclick="navigate('progress')"
+           style="cursor:pointer;display:flex;align-items:center;gap:14px;padding:16px 20px;margin-bottom:22px;border-radius:var(--r2);background:linear-gradient(90deg,rgba(220,53,69,.16),rgba(220,53,69,.04));border:1px solid rgba(220,53,69,.35)">
+        <div style="width:42px;height:42px;border-radius:12px;background:rgba(220,53,69,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.3rem">💰</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;color:#e06b76;font-size:.95rem;margin-bottom:2px">Bødekasse</div>
+          <div id="fine-box-sub" style="color:var(--muted);font-size:.82rem"></div>
+        </div>
+        <div id="fine-box-total" style="font-size:1.3rem;font-weight:800;color:#e06b76;flex-shrink:0"></div>
+      </div>
       <div class="stats-row">
         <div class="stat-card card-g">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -2145,6 +2155,7 @@ async function loadDashboard() {
   updateInstallBanner();
   updatePushBanner();
   updateWorkoutStreak();
+  updateFineBox();
 
   // Daglig vejnings-påmindelse: vis banner hvis der IKKE er logget en vægt i dag
   const reminderEl = document.getElementById('weigh-reminder');
@@ -2197,6 +2208,26 @@ async function updateWorkoutStreak() {
   document.getElementById('streak-count').textContent = streak;
   document.getElementById('streak-unit').textContent = streak === 1 ? 'uge i træk' : 'uger i træk';
   badge.classList.remove('hidden');
+}
+
+// Bødekasse: vises kun hvis coachen har slået den til for netop denne klient.
+// Klienten kan kun SE saldoen (RLS = read-only) — coachen styrer alt andet.
+async function updateFineBox() {
+  const el = document.getElementById('fine-box-banner');
+  if (!el || !S.user) return;
+  const [{ data: fbArr }, { data: entries }] = await Promise.all([
+    sb.from('fine_box').select('enabled,daily_rate').eq('user_id', S.user.id).limit(1),
+    sb.from('fine_entries').select('amount,waived,paid').eq('user_id', S.user.id),
+  ]);
+  const fb = fbArr?.[0];
+  if (!fb?.enabled) { el.classList.add('hidden'); return; }
+  const outstanding = (entries || []).filter(e => !e.waived && !e.paid);
+  const total = outstanding.reduce((s, e) => s + e.amount, 0);
+  document.getElementById('fine-box-total').textContent = total + ' kr.';
+  document.getElementById('fine-box-sub').textContent = total > 0
+    ? `${outstanding.length} dag${outstanding.length === 1 ? '' : 'e'} uden vægt-log · ${fb.daily_rate} kr./dag`
+    : `Ingen bøder — bliv ved sådan. ${fb.daily_rate} kr./dag hvis du glemmer at veje dig.`;
+  el.classList.remove('hidden');
 }
 
 function setMacroUI(macro, goal, consumed, color) {
