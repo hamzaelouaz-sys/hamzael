@@ -2,15 +2,17 @@
 <html lang="da">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Klientportal | Det Skarpe Liv</title>
 <meta name="description" content="Klientportal til Det Skarpe Liv — log ind for at se din kostplan og træningsprogram.">
 <meta name="author" content="Hamza El – Det Skarpe Liv">
 <!-- Privat, indlogget værktøj — skal ikke indekseres eller vises som link-preview -->
 <meta name="robots" content="noindex, nofollow">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<!-- Pinnede versioner (ikke @2/@4) så en ny CDN-udgivelse aldrig kan knække appen uden at vi selv har ændret noget -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/dist/email.min.js"></script>
+<link rel="icon" href="/icon-192.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -151,11 +153,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .dash-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px}
 .macro-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:24px;text-align:center;transition:border-color var(--trans)}
 .macro-card:hover{border-color:var(--bdr-g)}
-.macro-ring{width:130px;height:130px;margin:0 auto 16px;position:relative}
-.macro-ring canvas{display:block}
-.macro-ring-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
-.macro-ring-center .rv{font-family:var(--serif);font-size:1.45rem;font-weight:600;line-height:1;color:var(--txt)}
-.macro-ring-center .rl{font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:.18em;margin-top:4px;font-weight:600}
+.macro-big{font-family:var(--serif);font-size:2.4rem;font-weight:600;line-height:1;letter-spacing:-.015em;margin:6px 0 12px}
 .macro-title{font-size:.95rem;font-weight:700;margin-bottom:3px;letter-spacing:-.005em}
 .macro-sub{font-size:.78rem;color:var(--muted)}
 .macro-bar{height:3px;background:var(--surf3);border-radius:2px;margin-top:12px;overflow:hidden}
@@ -565,6 +563,9 @@ body.sv-lock{overflow:hidden}
         </div>
         <button class="btn btn-gold btn-full btn-lg" type="submit" id="reg-btn" style="margin-top:8px">Opret konto &rarr;</button>
       </form>
+      <p style="text-align:center;margin-top:22px;font-size:.72rem;color:var(--dim)">
+        <a href="/privatlivspolitik.html" target="_blank" rel="noopener" style="color:var(--dim);text-decoration:underline">Privatlivspolitik</a>
+      </p>
     </div>
   </div>
 </div>
@@ -785,23 +786,25 @@ body.sv-lock{overflow:hidden}
           <div class="stat-unit">indsendt</div>
         </div>
       </div>
+      <!-- Makromål: rene tal + andel af kalorierne. (De tidligere "progress-ringe" stod altid på 100 %,
+           fordi appen ikke logger indtag — det lignede fremgang der ikke fandtes.) -->
       <div class="dash-grid">
         <div class="macro-card">
-          <div class="macro-ring"><canvas id="cr-protein" width="130" height="130"></canvas><div class="macro-ring-center"><div class="rv" id="mr-protein-v">0g</div><div class="rl">Protein</div></div></div>
+          <div class="macro-big" id="mr-protein-v" style="color:var(--blue)">—</div>
           <div class="macro-title">Protein</div>
-          <div class="macro-sub" id="mr-protein-s">0 / 0g</div>
+          <div class="macro-sub" id="mr-protein-s">Dagligt mål</div>
           <div class="macro-bar"><div class="macro-bar-fill" id="mb-protein" style="width:0%;background:var(--blue)"></div></div>
         </div>
         <div class="macro-card">
-          <div class="macro-ring"><canvas id="cr-carbs" width="130" height="130"></canvas><div class="macro-ring-center"><div class="rv" id="mr-carbs-v">0g</div><div class="rl">Kulhydrat</div></div></div>
+          <div class="macro-big" id="mr-carbs-v" style="color:var(--gold)">—</div>
           <div class="macro-title">Kulhydrater</div>
-          <div class="macro-sub" id="mr-carbs-s">0 / 0g</div>
+          <div class="macro-sub" id="mr-carbs-s">Dagligt mål</div>
           <div class="macro-bar"><div class="macro-bar-fill" id="mb-carbs" style="width:0%;background:var(--gold)"></div></div>
         </div>
         <div class="macro-card">
-          <div class="macro-ring"><canvas id="cr-fat" width="130" height="130"></canvas><div class="macro-ring-center"><div class="rv" id="mr-fat-v">0g</div><div class="rl">Fedt</div></div></div>
+          <div class="macro-big" id="mr-fat-v" style="color:var(--green)">—</div>
           <div class="macro-title">Fedt</div>
-          <div class="macro-sub" id="mr-fat-s">0 / 0g</div>
+          <div class="macro-sub" id="mr-fat-s">Dagligt mål</div>
           <div class="macro-bar"><div class="macro-bar-fill" id="mb-fat" style="width:0%;background:var(--green)"></div></div>
         </div>
       </div>
@@ -1294,16 +1297,34 @@ const SUPA_URL = 'https://rtcayuwapitueckgprzc.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0Y2F5dXdhcGl0dWVja2dwcnpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NzA2MzAsImV4cCI6MjA5MzA0NjYzMH0.uwMOD1w3uvQFGLCTpB8kkGPxM1z1pRvzF2VEANr3VME';
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
-// ─── Push-notifikationer (udfyld VAPID-nøgle efter Hamza har genereret et nøglepar — se send-push
-// Edge Function-vejledningen). Uden en gyldig nøgle her viser push-banneret sig aldrig (Notification-
-// tjekket i subscribeToPush() fejler blot stille), så det er sikkert at lade stå tomt indtil da.
+// ─── Push-notifikationer — offentlig VAPID-nøgle (parret med VAPID_PRIVATE_KEY i Supabase secrets) ──
 const VAPID_PUBLIC_KEY = 'BI1p8yOjxKBLblu4Cg0R02pwThtz2zWjUOXl2Y2b5xaDl5Tk61-mOXn3CRzgAPJnqsovQzg53P-ITGmc2bM1eDI';
 
-// ─── EmailJS (udfyld efter oprettelse på emailjs.com) ───────────────────────
+// ─── EmailJS ────────────────────────────────────────────────────────────────
 const EJS_PUBLIC_KEY          = 'a4KL2nPc1RL_GwdeM';
 const EJS_SERVICE_ID          = 'service_q707r9z';
 const EJS_TEMPLATE_COACH      = 'template_f14ha6k';   // notifikation til coach
-const EJS_TEMPLATE_CLIENT     = 'template_wwbzwon';           // bekræftelse til klient
+
+// Dagens dato som YYYY-MM-DD i BRUGERENS lokale tid — ikke UTC. toISOString() giver UTC, hvilket
+// for en dansker efter midnat (fx kl. 00:30) stadig er "i går" → vejninger landede på forkert dag.
+function localDate(d = new Date()) {
+  return d.toLocaleDateString('sv-SE'); // sv-SE formaterer altid som YYYY-MM-DD
+}
+
+// ISO 8601-ugenummer (mandag–søndag, uge 1 = ugen med årets første torsdag). Matcher kalenderen
+// og coach-dashboardet. Returnerer ISO-året (kan afvige fra kalenderåret omkring nytår).
+function getWeekYear(date = new Date()) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const week = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+  return { week, year: d.getUTCFullYear() };
+}
+// Antal ISO-uger i et år (52 eller 53) — bruges når man tæller uger baglæns over nytår
+function isoWeeksInYear(year) {
+  return getWeekYear(new Date(year, 11, 28)).week;
+}
 
 // ─── State ─────────────────────────────────────────────────────────────────
 let S = {
@@ -1528,7 +1549,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const d = new Date();
   const dateStr = d.toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'long' });
   document.getElementById('today-lbl').textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
-  document.getElementById('wf-date').value = d.toISOString().split('T')[0];
+  document.getElementById('wf-date').value = localDate(d);
   updateWeekInfo();
 
   const { data: { session } } = await sb.auth.getSession();
@@ -1539,8 +1560,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   sb.auth.onAuthStateChange(async (ev, session) => {
     if (ev === 'PASSWORD_RECOVERY') { showPasswordReset(); return; }
-    if (session) await boot(session.user);
-    else showAuth();
+    // Kun ægte login/logout skal (gen)starte appen. TOKEN_REFRESHED fyrer hver gang Supabase
+    // fornyer sessionen (typisk når mobilen låses op) — kørte vi boot() dér, blev klienten smidt
+    // tilbage til Dashboard midt i fx en chat eller en træning.
+    if (ev === 'SIGNED_IN' && session) { if (!S.user || S.user.id !== session.user.id) await boot(session.user); return; }
+    if (ev === 'SIGNED_OUT') showAuth();
   });
 });
 
@@ -1551,7 +1575,7 @@ async function boot(user) {
   const onboarded = await isOnboarded();
   if (!onboarded) { showOnboarding(); return; }
   if (S.profile?.status === 'pending') { showPending(); return; }
-  if (EJS_PUBLIC_KEY !== 'DIN_PUBLIC_KEY') emailjs.init(EJS_PUBLIC_KEY);
+  emailjs.init(EJS_PUBLIC_KEY);
   showMainApp();
   startMsgRealtime();
   checkUnreadMessages();
@@ -1583,12 +1607,6 @@ async function checkUnreadMessages() {
     .select('id', { count: 'exact', head: true })
     .eq('user_id', S.user.id).eq('sender', 'coach').eq('read', false);
   if (count > 0) updateMsgBadge(count);
-}
-
-function getWeekYear(date = new Date()) {
-  const soy = new Date(date.getFullYear(), 0, 1);
-  const week = Math.ceil(((date - soy) / 86400000 + soy.getDay() + 1) / 7);
-  return { week, year: date.getFullYear() };
 }
 
 function updateWeekInfo() {
@@ -1651,7 +1669,7 @@ function startPendingRealtime() {
         sb.removeChannel(pendingChannel); pendingChannel = null;
         toast('Din konto er nu aktiveret — velkommen', 'ok');
         document.getElementById('pending-page').classList.add('hidden');
-        if (EJS_PUBLIC_KEY !== 'DIN_PUBLIC_KEY') emailjs.init(EJS_PUBLIC_KEY);
+        emailjs.init(EJS_PUBLIC_KEY);
         showMainApp();
         startMsgRealtime();
         checkUnreadMessages();
@@ -1719,8 +1737,9 @@ async function handleRegister(e) {
 
 async function handleLogout() {
   if (msgChannel) { sb.removeChannel(msgChannel); msgChannel = null; }
+  if (pendingChannel) { sb.removeChannel(pendingChannel); pendingChannel = null; }
   await sb.auth.signOut();
-  S = { user: null, profile: null, diet: null, workout: null, weightLog: [], checkins: [], messages: [], completions: [], strengthLogs: {}, currentPage: 'dashboard' };
+  S = { user: null, profile: null, diet: null, workout: null, weightLog: [], checkins: [], messages: [], completions: [], strengthLogs: {}, strengthHistory: [], bodyMeasurements: [], supplements: [], currentPage: 'dashboard' };
   showAuth();
 }
 
@@ -1754,6 +1773,9 @@ async function handleSetPassword() {
   if (error) { setAuthMsg(error.message, 'err'); return; }
   toast('Adgangskode opdateret! Du er nu logget ind.', 'ok');
   document.getElementById('set-password-form').classList.add('hidden');
+  // USER_UPDATED starter ikke længere appen automatisk (se onAuthStateChange) — gør det eksplicit her
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) await boot(session.user);
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -1909,7 +1931,13 @@ function renderObStep(step) {
           <option value="">Vælg</option>
           ${['Minimum (simple retter)','Mellem (kan følge opskrifter)','Avanceret (kan lave det meste)'].map(c=>`<option${d.cooking===c?' selected':''}>${c}</option>`).join('')}
         </select>
-      </div>`;
+      </div>
+      <!-- GDPR: skader/sygdomme/medicin er helbredsoplysninger (særlig kategori) — kræver eksplicit samtykke før de gemmes -->
+      <label style="display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border:1px solid var(--bdr-g);border-radius:var(--r2);background:var(--gold-xs);cursor:pointer;font-size:.86rem;line-height:1.55;color:var(--muted)">
+        <input type="checkbox" id="ob-consent" ${d.consent ? 'checked' : ''} style="width:18px;height:18px;flex-shrink:0;margin-top:2px;accent-color:var(--gold)">
+        <span>Jeg giver samtykke til, at Det Skarpe Liv behandler mine oplysninger — herunder helbredsoplysninger som skader og sygdomme — for at kunne lave min personlige kost- og træningsplan. Jeg kan trække samtykket tilbage når som helst.
+          <a href="/privatlivspolitik.html" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:underline">Læs privatlivspolitikken</a>.</span>
+      </label>`;
   }
 
   document.getElementById('ob-card').innerHTML = `
@@ -1934,6 +1962,9 @@ function validateObStep(step) {
   if (step === 2) {
     if (!document.getElementById('ob-goal')?.value) { toast('Vælg dit primære mål', 'err'); return false; }
   }
+  if (step === 5) {
+    if (!document.getElementById('ob-consent')?.checked) { toast('Du skal give samtykke til behandling af dine oplysninger for at fortsætte', 'err'); return false; }
+  }
   return true;
 }
 
@@ -1943,12 +1974,13 @@ function saveObData(step) {
   if (step === 2) { OB.data.goal = g('ob-goal'); OB.data.goalWeight = g('ob-goalweight'); OB.data.shortTermGoals = g('ob-shortgoals'); OB.data.why = g('ob-why'); }
   if (step === 3) { OB.data.injuries = g('ob-injuries'); OB.data.conditions = g('ob-conditions'); OB.data.prevCoach = g('ob-prevcoach'); }
   if (step === 4) { OB.data.experience = g('ob-exp'); OB.data.trainingDays = g('ob-days'); OB.data.trainTime = g('ob-traintime'); OB.data.equipment = g('ob-equipment'); OB.data.bestLifts = g('ob-bestlifts'); }
-  if (step === 5) { OB.data.allergies = g('ob-allergies'); OB.data.dislikes = g('ob-dislikes'); OB.data.mealsPerDay = g('ob-meals'); OB.data.dietType = g('ob-diet-type'); OB.data.cooking = g('ob-cooking'); }
+  if (step === 5) { OB.data.allergies = g('ob-allergies'); OB.data.dislikes = g('ob-dislikes'); OB.data.mealsPerDay = g('ob-meals'); OB.data.dietType = g('ob-diet-type'); OB.data.cooking = g('ob-cooking'); OB.data.consent = !!document.getElementById('ob-consent')?.checked; }
 }
 function obNext() { if (!validateObStep(OB.step)) return; saveObData(OB.step); renderObStep(OB.step + 1); }
 function obBack() { saveObData(OB.step); renderObStep(OB.step - 1); }
 
 async function obSubmit() {
+  if (!validateObStep(5)) return;
   saveObData(5);
   const btn = document.querySelector('#ob-card .btn-gold');
   if (btn) { btn.textContent = 'Gemmer...'; btn.disabled = true; }
@@ -1978,9 +2010,16 @@ async function obSubmit() {
     meals_per_day: d.mealsPerDay ? parseInt(d.mealsPerDay) : null,
     cooking_level: d.cooking || null,
     completed: true,
-    submitted_at: new Date().toISOString()
+    submitted_at: new Date().toISOString(),
+    consent_at: new Date().toISOString()
   };
-  const { error } = await sb.from('intake_forms').upsert(payload, { onConflict: 'user_id' });
+  let { error } = await sb.from('intake_forms').upsert(payload, { onConflict: 'user_id' });
+  // Fallback: hvis consent_at-kolonnen endnu ikke er oprettet i Supabase (migration 0002 ikke kørt),
+  // må onboarding ikke gå i stå for nye klienter — gem uden feltet i stedet.
+  if (error && /consent_at/.test(error.message || '')) {
+    delete payload.consent_at;
+    ({ error } = await sb.from('intake_forms').upsert(payload, { onConflict: 'user_id' }));
+  }
   if (error) {
     toast('Fejl ved gemning: ' + error.message, 'err');
     if (btn) { btn.textContent = 'Kom i gang'; btn.disabled = false; }
@@ -1991,7 +2030,7 @@ async function obSubmit() {
     await sb.from('weight_log').insert({
       user_id: S.user.id,
       weight: parseFloat(OB.data.startWeight),
-      date: new Date().toISOString().split('T')[0],
+      date: localDate(),
       notes: 'Startvægt (opstartsskema)'
     });
   }
@@ -2036,7 +2075,7 @@ function quickWeigh() {
   setTimeout(() => {
     const dateEl = document.getElementById('wf-date');
     const wEl = document.getElementById('wf-weight');
-    if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0, 10);
+    if (dateEl && !dateEl.value) dateEl.value = localDate();
     if (wEl) { wEl.focus(); wEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
   }, 250);
 }
@@ -2129,15 +2168,15 @@ async function loadDashboard() {
   if (d) {
     document.getElementById('s-kcal').textContent = d.calories || '—';
     document.getElementById('s-protein').textContent = (d.protein || '—') + (d.protein ? 'g' : '');
-    renderRing('cr-protein', d.protein, 0, '#5b8dee');
-    renderRing('cr-carbs', d.carbs, 0, '#c9a84c');
-    renderRing('cr-fat', d.fat, 0, '#4caf7d');
-    setMacroUI('protein', d.protein, 0, '#5b8dee');
-    setMacroUI('carbs', d.carbs, 0, '#c9a84c');
-    setMacroUI('fat', d.fat, 0, '#4caf7d');
+    // Andel af kalorierne pr. makro (P/K = 4 kcal/g, F = 9 kcal/g) — vises som bar + procent
+    const kcalP = (d.protein || 0) * 4, kcalC = (d.carbs || 0) * 4, kcalF = (d.fat || 0) * 9;
+    const kcalTot = kcalP + kcalC + kcalF || 1;
+    setMacroUI('protein', d.protein, Math.round(kcalP / kcalTot * 100));
+    setMacroUI('carbs',   d.carbs,   Math.round(kcalC / kcalTot * 100));
+    setMacroUI('fat',     d.fat,     Math.round(kcalF / kcalTot * 100));
     document.getElementById('dash-subtitle').textContent = 'Her er din oversigt for i dag';
   } else {
-    ['protein','carbs','fat'].forEach(m => { renderRing('cr-'+m, 1, 0, '#444'); });
+    ['protein','carbs','fat'].forEach(m => setMacroUI(m, 0, 0));
     const isActive = S.profile?.status === 'active';
     document.getElementById('dash-subtitle').textContent = isActive
       ? 'Din coach er ved at gøre din plan klar — check ind igen snart.'
@@ -2157,7 +2196,7 @@ async function loadDashboard() {
   // Daglig vejnings-påmindelse: vis banner hvis der IKKE er logget en vægt i dag
   const reminderEl = document.getElementById('weigh-reminder');
   if (reminderEl) {
-    const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const todayStr = localDate();
     const weighedToday = S.weightLog.some(w => w.weight != null && String(w.date).slice(0, 10) === todayStr);
     reminderEl.classList.toggle('hidden', weighedToday);
   }
@@ -2193,7 +2232,8 @@ async function updateWorkoutStreak() {
   const { data } = await sb.from('workout_completions').select('week_number,year').eq('user_id', S.user.id);
   if (!data?.length) { badge.classList.add('hidden'); return; }
   const weeks = new Set(data.map(r => `${r.year}-${r.week_number}`));
-  const prevWeek = (week, year) => week > 1 ? { week: week - 1, year } : { week: 52, year: year - 1 };
+  // Ugen før — respekterer at et ISO-år kan have 53 uger, så streaken ikke knækker ved nytår
+  const prevWeek = (week, year) => week > 1 ? { week: week - 1, year } : { week: isoWeeksInYear(year - 1), year: year - 1 };
   let { week, year } = getWeekYear();
   if (!weeks.has(`${year}-${week}`)) ({ week, year } = prevWeek(week, year));
   let streak = 0;
@@ -2227,39 +2267,11 @@ async function updateFineBox() {
   el.classList.remove('hidden');
 }
 
-function setMacroUI(macro, goal, consumed, color) {
-  const pct = consumed > 0 && goal > 0 ? Math.min(100, Math.round(consumed / goal * 100)) : (goal > 0 ? 100 : 0);
-  document.getElementById('mr-' + macro + '-v').textContent = (goal || 0) + 'g';
-  document.getElementById('mr-' + macro + '-s').textContent = consumed > 0 ? `${consumed}g / ${goal || 0}g` : 'Dagligt mål';
-  const bar = document.getElementById('mb-' + macro);
-  bar.style.width = pct + '%';
-  bar.style.background = color;
-}
-
-function renderRing(canvasId, goal, consumed, color) {
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  if (C[canvasId]) { C[canvasId].destroy(); }
-  const g = goal || 1;
-  const c = consumed || 0;
-  const rem = Math.max(0, g - c);
-  C[canvasId] = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      datasets: [{
-        data: c > 0 ? [c, rem] : [g, 0],
-        backgroundColor: c > 0 ? [color, 'rgba(255,255,255,0.07)'] : [color, 'transparent'],
-        borderWidth: 0,
-        cutout: '76%'
-      }]
-    },
-    options: {
-      animation: { animateRotate: true },
-      plugins: { legend: { display: false }, tooltip: { enabled: false } },
-      events: []
-    }
-  });
+// goal = gram pr. dag, pctOfKcal = makroens andel af det samlede kaloriemål (0-100)
+function setMacroUI(macro, goal, pctOfKcal) {
+  document.getElementById('mr-' + macro + '-v').textContent = goal ? goal + 'g' : '—';
+  document.getElementById('mr-' + macro + '-s').textContent = goal ? `Dagligt mål · ${pctOfKcal}% af kalorierne` : 'Dagligt mål';
+  document.getElementById('mb-' + macro).style.width = (goal ? pctOfKcal : 0) + '%';
 }
 
 function renderWeightChart(canvasId, chartKey) {
@@ -2463,8 +2475,8 @@ async function loadDiet() {
       <div class="meal-hdr" onclick="toggleMeal(${i})">
         <div class="meal-icon" style="font-family:var(--serif);font-weight:800;font-size:.78rem;letter-spacing:.06em;color:var(--gold)">${String(i+1).padStart(2,'0')}</div>
         <div class="meal-info">
-          <div class="meal-time-lbl">${m.time}</div>
-          <div class="meal-nm">${m.name}</div>
+          <div class="meal-time-lbl">${escHtml(m.time || '')}</div>
+          <div class="meal-nm">${escHtml(m.name || '')}</div>
         </div>
         <div class="meal-macros">
           <span class="mm-kcal">${Math.round(m.calories||0)}</span> kcal
@@ -2479,8 +2491,8 @@ async function loadDiet() {
       <div class="meal-body" id="mb-${i}">
         ${(m.items || []).map(it => `
           <div class="meal-item">
-            <span class="mi-name">${it.name||''}</span>
-            <span class="mi-amt">${it.gram ? it.gram + 'g' : (it.amount||'')}</span>
+            <span class="mi-name">${escHtml(it.name||'')}</span>
+            <span class="mi-amt">${it.gram ? escHtml(it.gram) + 'g' : escHtml(it.amount||'')}</span>
           </div>`).join('')}
         ${m.note ? `
           <div style="padding:14px 0 16px;border-top:1px solid var(--bdr);margin-top:2px">
@@ -2496,14 +2508,14 @@ async function loadDiet() {
 async function checkAdherenceToday() {
   const banner = document.getElementById('adherence-banner');
   if (!banner || !S.user) return;
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = localDate();
   const { data } = await sb.from('diet_adherence').select('status').eq('user_id', S.user.id).eq('date', todayStr).maybeSingle();
   banner.classList.toggle('hidden', !!data);
 }
 
 async function logAdherence(status) {
   const { week, year } = getWeekYear();
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = localDate();
   const { error } = await sb.from('diet_adherence')
     .upsert({ user_id: S.user.id, date: todayStr, week_number: week, year, status }, { onConflict: 'user_id,date' });
   if (error) { toast('Kunne ikke gemme: ' + error.message, 'err'); return; }
@@ -2525,21 +2537,18 @@ function toggleMeal(i) {
 async function loadTraining() {
   const { week: thisWeek, year: thisYear } = getWeekYear();
 
-  const [cdRes, compRes, slRes, histRes] = await Promise.all([
+  const [cdRes, compRes, slRes] = await Promise.all([
     sb.from('client_data').select('program').eq('user_id', S.user.id)
       .order('updated_at', { ascending: false }).limit(1).maybeSingle(),
     sb.from('workout_completions').select('day_name')
       .eq('user_id', S.user.id).eq('week_number', thisWeek).eq('year', thisYear),
-    // Ingen uge-begrænsning her — "Sidst:"-hintet skal altid vise klientens faktisk seneste session pr. øvelse, uanset hvor længe siden det er
-    sb.from('strength_logs').select('exercise_name,week_number,year,day_name,set_number,weight_kg,reps,rpe')
-      .eq('user_id', S.user.id)
-      .order('created_at', { ascending: false }).limit(500),
-    // Bredere historik (ikke kun seneste uge) til fremgangs-sparklines pr. øvelse
-    sb.from('strength_logs').select('exercise_name,weight_kg,created_at')
+    // Ingen uge-begrænsning — "Sidst:"-hintet skal altid vise klientens faktisk seneste session pr. øvelse.
+    // Samme 500 rækker bruges også til fremgangs-sparklines (created_at er med), så én query er nok.
+    sb.from('strength_logs').select('exercise_name,week_number,year,day_name,set_number,weight_kg,reps,rpe,created_at')
       .eq('user_id', S.user.id)
       .order('created_at', { ascending: false }).limit(500)
   ]);
-  S.strengthHistory = histRes.data || [];
+  S.strengthHistory = slRes.data || [];
 
   // Build lookup: exercise_name → alle sæt fra seneste session
   const sessionMap = {};
@@ -2694,12 +2703,13 @@ function renderTrainingDay(selectedDay) {
         <button type="button" class="set-edit-btn hidden" id="seb-${i}-${j}" title="Ret sæt" aria-label="Ret sæt">✎</button>
       </div>`;
     }).join('');
-    const vidBtn = ex.video_url ? `<button class="ex-video-btn" onclick="openVidModal(event,'${ex.name.replace(/'/g,"\\'")}','${ex.video_url.replace(/'/g,"\\'")}')">▶ Se video</button>` : '';
+    // Video-knap: navn/URL læses fra data-attributter i stedet for at blive interpoleret ind i en onclick-streng
+    const vidBtn = ex.video_url ? `<button class="ex-video-btn" data-vid-name="${escHtml(ex.name)}" data-vid-url="${escHtml(ex.video_url)}" onclick="openVidModal(event,this.dataset.vidName,this.dataset.vidUrl)">▶ Se video</button>` : '';
     return `<div class="ex-card" id="exc-${i}">
       <div class="ex-num" id="exn-${i}">${i + 1}</div>
       <div class="ex-info">
-        <div class="ex-nm">${ex.name} ${vidBtn}</div>
-        <div class="ex-det">${ex.sets} sæt &times; ${ex.reps} reps &bull; ${ex.weight} &bull; Hvile: ${ex.rest}s</div>
+        <div class="ex-nm">${escHtml(ex.name)} ${vidBtn}</div>
+        <div class="ex-det">${escHtml(ex.sets)} sæt &times; ${escHtml(ex.reps)} reps${ex.weight ? ' &bull; ' + escHtml(ex.weight) : ''} &bull; Hvile: ${escHtml(ex.rest)}s</div>
         ${prevHint}
       </div>
       <div class="ex-sdots" id="esd-${i}">
@@ -2969,7 +2979,7 @@ async function endWorkout() {
   const { week, year } = getWeekYear();
 
   // Gem completion
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = localDate();
   const compKey = `wk_comp_${S.user.id}_${todayStr}_${currentTrainingDay}`;
   const alreadyDoneToday = localStorage.getItem(compKey);
 
@@ -3130,8 +3140,8 @@ async function fetchWeightLog() {
 }
 
 async function loadProgress() {
-  document.getElementById('wf-date').value = new Date().toISOString().split('T')[0];
-  document.getElementById('bm-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('wf-date').value = localDate();
+  document.getElementById('bm-date').value = localDate();
   restoreDLDraft();
   await Promise.all([fetchWeightLog(), fetchBodyMeasurements()]);
   renderProgressChart();
@@ -3461,7 +3471,6 @@ async function submitCheckin() {
   const notes = document.getElementById('ci-notes').value.trim();
   if (!weight) { toast('Angiv venligst din vægt', 'err'); return; }
 
-  const now = new Date();
   const { week, year } = getWeekYear();
 
   const { data: existing } = await sb.from('checkins')
@@ -3476,8 +3485,8 @@ async function submitCheckin() {
   });
   if (error) { toast('Fejl: ' + error.message, 'err'); return; }
 
-  const todayStr = now.toISOString().split('T')[0];
-  const { data: existWL } = await sb.from('weight_log').select('id').eq('user_id', S.user.id).eq('date', todayStr).maybeSingle();
+  const todayStr = localDate();
+  const { data: existWL } = await sb.from('weight_log').select('id').eq('user_id', S.user.id).eq('date', todayStr).order('created_at', { ascending: false }).limit(1).maybeSingle();
   if (existWL) {
     await sb.from('weight_log').update({ weight, notes: 'Fra ugentligt check-in' }).eq('id', existWL.id);
   } else {
@@ -3488,7 +3497,7 @@ async function submitCheckin() {
   toast('Check-in sendt — din coach ser det snart', 'ok');
 
   // Email notifikation til coach
-  if (EJS_PUBLIC_KEY !== 'DIN_PUBLIC_KEY') {
+  {
     const name = S.profile?.full_name || S.user.email;
     emailjs.send(EJS_SERVICE_ID, EJS_TEMPLATE_COACH, {
       to_email: 'hamzaelouaz@gmail.com',
@@ -3623,23 +3632,14 @@ async function sendMessage() {
   notifyCoachByEmail(content);
 }
 
+// Kun coachen får en mail. Klienten fik tidligere også en "besked modtaget"-bekræftelse — den er
+// fjernet: klienten sidder allerede i appen og ser sin egen besked, og det fordoblede forbruget af
+// EmailJS' gratis kvote (200 mails/md).
 function notifyCoachByEmail(content) {
-  if (EJS_PUBLIC_KEY === 'DIN_PUBLIC_KEY') return;
   const name = S.profile?.full_name || S.user.email;
-  const params = { client_name: name, client_email: S.user.email, message: content };
-
-  emailjs.send(EJS_SERVICE_ID, EJS_TEMPLATE_COACH, { ...params, to_email: 'hamzaelouaz@gmail.com' })
-    .catch(err => console.warn('Coach email fejl:', JSON.stringify(err)));
-
-  emailjs.send(EJS_SERVICE_ID, EJS_TEMPLATE_CLIENT, {
-    to_email: S.user.email,
-    client_name: params.client_name,
-    subject: 'Besked modtaget – Hamza El svarer dig snart',
-    heading: 'Besked modtaget ✓',
-    intro: 'Din besked er modtaget. Hamza vender tilbage til dig hurtigst muligt — typisk inden for 24 timer.',
-    message_label: 'Din besked',
-    message: content
-  }).catch(err => console.warn('Klient email fejl:', JSON.stringify(err)));
+  emailjs.send(EJS_SERVICE_ID, EJS_TEMPLATE_COACH, {
+    to_email: 'hamzaelouaz@gmail.com', client_name: name, client_email: S.user.email, message: content
+  }).catch(err => console.warn('Coach email fejl:', JSON.stringify(err)));
 }
 
 function updateMsgBadge(count) {

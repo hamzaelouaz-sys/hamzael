@@ -1,0 +1,8 @@
+# Løse billeder/videoer der ikke skal på det offentlige Pages-site.
+# Brug i stedet YouTube (unlisted) eller Supabase Storage for øvelsesvideoer.
+/video/
+Profil.jpg
+Profile.png
+2972c937-7ee9-4886-98d1-fec837a43d51.jpg
+f062725c*.jpg
+f3e3f4ce*.jpg
