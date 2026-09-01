@@ -181,18 +181,17 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .meal-info{flex:1;min-width:0}
 .meal-time-lbl{font-size:.66rem;color:var(--gold);font-weight:700;letter-spacing:.18em;margin-bottom:3px;text-transform:uppercase}
 .meal-nm{font-weight:600;font-size:.96rem;letter-spacing:-.005em}
-.meal-stats{display:flex;gap:18px;flex-shrink:0}
-.meal-stat{text-align:center}
-.meal-stat .sv{font-family:var(--serif);font-size:1.05rem;font-weight:600;color:var(--txt)}
-.meal-stat .sl{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.16em;font-weight:600;margin-top:2px}
+/* Kompakt makro-linje pr. måltid — én linje, altid synlig (også mobil), som NM Fitness' klientvisning */
+.meal-macros{flex-shrink:0;font-size:.75rem;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.meal-macros .mm-kcal{font-family:var(--serif);font-size:1.05rem;font-weight:600;color:var(--gold)}
+.meal-macros .mm-sep{opacity:.35;margin:0 3px}
 .meal-toggle{width:30px;height:30px;border-radius:50%;background:var(--surf2);border:1px solid var(--bdr);cursor:pointer;color:var(--muted);transition:all var(--trans);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .meal-toggle.open{background:rgba(217,199,167,.12);color:var(--gold);transform:rotate(180deg);border-color:var(--bdr-g)}
 .meal-body{border-top:1px solid var(--bdr);padding:6px 22px 14px}
-.meal-item{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--bdr)}
+.meal-item{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--bdr)}
 .meal-item:last-child{border-bottom:none}
-.mi-name{font-size:.88rem;font-weight:500;color:var(--txt)}
-.mi-amt{font-size:.76rem;color:var(--muted);margin-top:2px}
-.mi-kcal{font-family:var(--serif);font-size:1rem;font-weight:600;color:var(--gold)}
+.mi-name{font-size:.9rem;font-weight:500;color:var(--txt)}
+.mi-amt{font-size:.82rem;color:var(--muted);flex-shrink:0;font-variant-numeric:tabular-nums}
 
 /* ===== TRAINING ===== */
 .workout-banner{background:linear-gradient(135deg,rgba(217,199,167,.08),rgba(217,199,167,.02));border:1px solid var(--bdr-g);border-radius:var(--r2);padding:28px;margin-bottom:22px;text-align:center;position:relative;overflow:hidden}
@@ -417,8 +416,8 @@ body.sv-lock{overflow:hidden}
   .ob-card{padding:32px 24px}
   .wf-row{grid-template-columns:1fr 1fr}
   .diet-hero{flex-direction:column;align-items:flex-start;padding:22px}
-  .meal-stats{display:none}
-  .meal-hdr{padding:16px 18px}
+  .meal-hdr{padding:16px 18px;flex-wrap:wrap}
+  .meal-macros{width:100%;order:3;padding-left:58px;padding-top:2px}
   .workout-banner{padding:22px}
   .wk-name{font-size:1.4rem}
   .player-box,.rest-timer-box{padding:22px 18px}
@@ -485,18 +484,6 @@ body.sv-lock{overflow:hidden}
 .mt-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 .mt-dot.primary{background:var(--gold);box-shadow:0 0 5px rgba(201,169,97,.7)}
 .mt-dot.secondary{background:rgba(201,169,97,.4)}
-
-/* ===== MIKRONÆRINGSSTOFFER ===== */
-.micro-panel{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:24px;margin-top:14px}
-.micro-panel-title{font-size:.66rem;color:var(--muted);font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin-bottom:18px}
-.micro-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-.micro-lbl{width:110px;font-size:.8rem;font-weight:600;flex-shrink:0;color:var(--txt)}
-.micro-bar-wrap{flex:1;height:5px;background:var(--surf3);border-radius:3px;overflow:hidden}
-.micro-bar-fill{height:100%;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1)}
-.micro-val{font-size:.75rem;font-weight:700;width:60px;text-align:right;flex-shrink:0;font-family:var(--serif)}
-.micro-bar-fill.ok{background:var(--green)}
-.micro-bar-fill.mid{background:var(--gold)}
-.micro-bar-fill.low{background:var(--red)}
 
 </style>
 <link rel="manifest" href="/app/manifest.json">
@@ -854,7 +841,6 @@ body.sv-lock{overflow:hidden}
         </div>
       </div>
       <div id="meal-list"></div>
-      <div id="micro-panel" class="hidden"></div>
     </div>
 
     <!-- TRÆNING -->
@@ -1427,6 +1413,18 @@ function clearWKState() {
   if (S.user) localStorage.removeItem('wk_state_' + S.user.id);
 }
 
+// True hvis klienten har en påbegyndt træningssession der stadig er "frisk" (< 20 t).
+// Bruges ved app-start til at sende dem direkte til træningen i stedet for oversigten.
+function hasActiveTrainingSession() {
+  if (!S.user) return false;
+  try {
+    const saved = JSON.parse(localStorage.getItem('wk_state_' + S.user.id) || 'null');
+    if (!saved || !saved.started) return false;
+    const savedAt = saved.savedAt ?? (saved.date ? new Date(saved.date).getTime() : 0);
+    return !!savedAt && Date.now() - savedAt <= 20 * 60 * 60 * 1000;
+  } catch { return false; }
+}
+
 function restoreWKState(selectedDay) {
   if (!S.user) return;
   const raw = localStorage.getItem('wk_state_' + S.user.id);
@@ -1557,9 +1555,9 @@ async function boot(user) {
   showMainApp();
   startMsgRealtime();
   checkUnreadMessages();
-  // Genåbn den side brugeren var på (fx efter app'en er blevet genindlæst i baggrunden på mobil)
-  const lastPage = localStorage.getItem('dsl_last_page_' + S.user.id);
-  navigate(lastPage && PAGE_TITLES[lastPage] ? lastPage : 'dashboard');
+  // Start altid på oversigten — medmindre klienten er midt i en træningssession,
+  // så åbner vi træningen direkte (renderTrainingDay genopretter selve session-visningen)
+  navigate(hasActiveTrainingSession() ? 'training' : 'dashboard');
 }
 
 function startMsgRealtime() {
@@ -2017,7 +2015,6 @@ const PAGE_TITLES = {
 
 function navigate(page) {
   S.currentPage = page;
-  if (S.user) localStorage.setItem('dsl_last_page_' + S.user.id, page);
   document.querySelectorAll('[id^="pg-"]').forEach(el => el.classList.add('hidden'));
   const target = document.getElementById('pg-' + page);
   target.classList.remove('hidden');
@@ -2440,9 +2437,10 @@ async function loadDiet() {
   // Tjek om coachen har ændret makromålene siden klienten sidst så dem
   const changed = checkMacroChanges(d);
   document.getElementById('diet-title').textContent = d.plan_name || 'Din kostplan';
-  document.getElementById('diet-desc').textContent = `${d.calories} kcal om dagen`;
+  // Kalorier står allerede som første makro-badge — drop den overflødige undertekst
+  document.getElementById('diet-desc').style.display = 'none';
   const badges = [
-    { v: d.calories, l: 'Kalorier', u: 'kcal', key: 'calories' },
+    { v: d.calories, l: 'Kalorier', u: '', key: 'calories' },
     { v: d.protein + 'g', l: 'Protein', u: '', key: 'protein' },
     { v: d.carbs + 'g', l: 'Kulhydrat', u: '', key: 'carbs' },
     { v: d.fat + 'g', l: 'Fedt', u: '', key: 'fat' }
@@ -2468,21 +2466,21 @@ async function loadDiet() {
           <div class="meal-time-lbl">${m.time}</div>
           <div class="meal-nm">${m.name}</div>
         </div>
-        <div class="meal-stats">
-          <div class="meal-stat"><div class="sv">${Math.round(m.calories||0)}</div><div class="sl">kcal</div></div>
-          <div class="meal-stat"><div class="sv">${Math.round(m.protein||0)}g</div><div class="sl">protein</div></div>
-          <div class="meal-stat"><div class="sv">${Math.round(m.carbs||0)}g</div><div class="sl">kulh.</div></div>
-          <div class="meal-stat"><div class="sv">${Math.round(m.fat||0)}g</div><div class="sl">fedt</div></div>
+        <div class="meal-macros">
+          <span class="mm-kcal">${Math.round(m.calories||0)}</span> kcal
+          <span class="mm-sep">·</span> P ${Math.round(m.protein||0)}
+          <span class="mm-sep">·</span> K ${Math.round(m.carbs||0)}
+          <span class="mm-sep">·</span> F ${Math.round(m.fat||0)}
         </div>
-        <button class="meal-toggle" id="mt-${i}">
+        <button class="meal-toggle open" id="mt-${i}">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
       </div>
-      <div class="meal-body hidden" id="mb-${i}">
+      <div class="meal-body" id="mb-${i}">
         ${(m.items || []).map(it => `
           <div class="meal-item">
-            <div><div class="mi-name">${it.name||''}</div><div class="mi-amt">${it.gram ? it.gram + 'g' : (it.amount||'')}</div></div>
-            <div class="mi-kcal">${Math.round(it.calories||0)} kcal</div>
+            <span class="mi-name">${it.name||''}</span>
+            <span class="mi-amt">${it.gram ? it.gram + 'g' : (it.amount||'')}</span>
           </div>`).join('')}
         ${m.note ? `
           <div style="padding:14px 0 16px;border-top:1px solid var(--bdr);margin-top:2px">
@@ -2491,7 +2489,6 @@ async function loadDiet() {
           </div>` : ''}
       </div>
     </div>`).join('');
-  renderMicroPanel(d.meals);
   checkAdherenceToday();
 }
 
@@ -3731,100 +3728,6 @@ function updateMuscleMap(exercises) {
   legend.innerHTML =
     (priArr.length ? `<div class="anatomy-lbl-row">Primære</div><div class="muscle-tags">${priArr.map(n => `<span class="muscle-tag primary"><span class="mt-dot primary"></span>${n}</span>`).join('')}</div>` : '') +
     (secArr.length ? `<div class="anatomy-lbl-row">Sekundære</div><div class="muscle-tags">${secArr.map(n => `<span class="muscle-tag secondary"><span class="mt-dot secondary"></span>${n}</span>`).join('')}</div>` : '');
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// MIKRONÆRINGSSTOFFER
-// ════════════════════════════════════════════════════════════════════════════
-// [fiber(g), vitC(mg), ca(mg), fe(mg), zn(mg)] per 100g
-const MICRO_BANK = {
-  'Kyllingebryst (rå)':[0,0,9,0.7,0.7],'Kyllingebryst (skiver, pålæg)':[0,0,12,0.9,1.0],
-  'Kyllingelår (rå, u. skind)':[0,0,8,0.7,1.3],
-  'Kyllingefilet (rå)':[0,0,9,0.6,0.7],'Kalkun bryst (rå)':[0,0,8,0.8,1.4],
-  'Kalkun (hakket)':[0,0,12,1.2,2.2],'Oksemørbrad (rå)':[0,0,9,1.7,3.2],
-  'Oksekød hakket 10%':[0,0,11,2.2,4.5],'Oksekød hakket 5%':[0,0,12,2.4,4.8],
-  'Okse ribeye (rå)':[0,0,7,1.5,3.8],'Okse inderlår (rå)':[0,0,7,2.0,3.7],
-  'Svinekød (filet)':[0,0,10,1.0,2.0],'Svinemørbrad (rå)':[0,0,11,1.0,2.1],
-  'Laks (fersk)':[0,0,13,0.4,0.5],'Laks (dåse)':[0,0,15,0.5,0.5],
-  'Tun (dåse, vand)':[0,0,12,0.6,0.6],'Torsk (filet)':[0,0,16,0.4,0.4],
-  'Makrel (dåse)':[0,0,16,1.6,0.9],'Sardiner (dåse)':[0,0,382,2.9,1.3],
-  'Rejer (rå)':[0,0,64,0.5,1.1],'Æg (helt)':[0,0,56,1.8,1.3],
-  'Æggehvide':[0,0,7,0.1,0.0],'Skyr (naturel)':[0,0,135,0.0,0.5],
-  'Hytteost':[0,0,83,0.1,0.4],'Græksk yoghurt 0%':[0,0,110,0.1,0.5],
-  'Græksk yoghurt 2%':[0,0,115,0.1,0.5],'Proteinpulver (valle)':[0,0,600,0.5,2.5],
-  'Havregryn':[10,0,54,4.3,3.6],'Havregrød (lavet med vand)':[2,0,11,0.9,0.7],
-  'Havreklid':[17,0,73,6.6,3.1],'Hvid ris (rå)':[1.1,0,28,0.6,1.4],
-  'Brun ris (rå)':[5.5,0,30,1.5,1.8],'Quinoa (rå)':[8.6,0,52,4.6,3.4],
-  'Bulgur (rå)':[18.5,0,41,4.1,2.1],'Fuldkornsbrød':[6.0,0,30,2.5,1.5],
-  'Rugbrød':[6.5,0,24,2.0,1.3],'Pasta (rå)':[5.1,0,20,1.4,1.4],
-  'Fuldkornspasta (rå)':[9.7,0,50,3.6,2.2],'Kartofler (rå)':[1.6,8,7,0.4,0.3],
-  'Søde kartofler (rå)':[2.9,16,29,0.7,0.3],'Æble':[2.4,4,6,0.1,0.0],
-  'Banan':[2.6,9,5,0.3,0.2],'Orange':[2.4,53,40,0.1,0.1],
-  'Jordbær':[2.0,59,16,0.4,0.1],'Blåbær':[2.4,10,6,0.3,0.2],
-  'Hindbær':[6.5,26,25,0.7,0.4],'Kiwi':[3.0,93,34,0.3,0.1],
-  'Mango':[1.6,36,11,0.2,0.1],'Broccoli':[2.6,89,47,0.7,0.4],
-  'Spinat':[2.2,28,99,2.7,0.5],'Babyspinat':[2.2,28,99,2.7,0.5],
-  'Blomkål':[2.5,48,22,0.4,0.3],'Asparges':[2.1,5,24,2.1,0.5],
-  'Rød peberfrugt':[2.1,128,7,0.4,0.3],'Grønkål':[3.6,82,135,1.5,0.4],
-  'Rosenkål':[3.8,85,42,1.4,0.4],'Gulerødder':[2.8,6,33,0.3,0.2],
-  'Tomater':[1.2,14,10,0.3,0.2],'Agurk':[0.5,3,16,0.3,0.2],
-  'Avocado':[6.7,10,12,0.6,0.6],'Kikærter (dåse, afdryppet)':[7.6,2,49,2.9,1.5],
-  'Røde linser (rå, tørrede)':[23.9,6,58,10.0,3.9],'Grønne linser (rå, tørrede)':[24.0,6,58,10.0,4.0],
-  'Hvide bønner (dåse, afdryppet)':[6.3,0,70,3.7,1.0],'Sorte bønner (dåse, afdryppet)':[8.7,0,27,2.1,1.0],
-  'Edamame (frosne, skallede)':[5.2,6,63,2.3,1.4],'Tofu (fast)':[0.3,0,350,5.4,0.8],
-  'Mandler':[12.5,0,264,3.7,3.1],'Valnødder':[6.7,1,98,2.9,3.1],
-  'Chiafrø':[34.4,1,631,7.7,4.6],'Hørfrø':[27.3,1,255,5.7,4.3],
-  'Græskarkerner':[6.0,1,46,8.8,7.6],'Solsikkefrø':[8.6,1,78,5.3,5.0],
-  'Sødmælk 3.5%':[0,1,120,0.1,0.4],'Minimælk 1.5%':[0,1,120,0.1,0.4],
-  'Ost (gouda)':[0,0,700,0.2,3.9],'Ost mager 17%':[0,0,660,0.3,3.5],
-  'Feta':[0,0,360,0.7,1.4],'Mozzarella':[0,0,505,0.2,2.9],
-  'Parmesan (revet)':[0,0,1180,0.9,4.0],'Hummus':[6.0,3,38,2.4,1.4],
-  'Jordnøddesmør':[6.0,0,49,1.9,2.8],'Honning':[0.2,0,6,0.4,0.2],
-  'Sojasauce':[0.1,0,18,2.8,0.5],
-};
-
-function calcMicros(meals) {
-  const totals = { fiber:0, vitC:0, ca:0, fe:0, zn:0 };
-  (meals || []).forEach(meal => {
-    (meal.items || []).forEach(it => {
-      const m = MICRO_BANK[it.name];
-      if (!m) return;
-      const scale = (it.gram || 0) / 100;
-      totals.fiber += m[0] * scale;
-      totals.vitC  += m[1] * scale;
-      totals.ca    += m[2] * scale;
-      totals.fe    += m[3] * scale;
-      totals.zn    += m[4] * scale;
-    });
-  });
-  return totals;
-}
-
-function renderMicroPanel(meals) {
-  const panel = document.getElementById('micro-panel');
-  if (!panel) return;
-  const t = calcMicros(meals);
-  const rows = [
-    { key:'fiber', lbl:'Fiber',       val:t.fiber, ref:30,   unit:'g',  dec:1 },
-    { key:'vitC',  lbl:'Vitamin C',   val:t.vitC,  ref:80,   unit:'mg', dec:0 },
-    { key:'ca',    lbl:'Calcium',     val:t.ca,    ref:1000, unit:'mg', dec:0 },
-    { key:'fe',    lbl:'Jern',        val:t.fe,    ref:15,   unit:'mg', dec:1 },
-    { key:'zn',    lbl:'Zink',        val:t.zn,    ref:10,   unit:'mg', dec:1 },
-  ];
-  panel.className = 'micro-panel';
-  panel.innerHTML = `
-    <div class="micro-panel-title">Mikronæringsstoffer (dagligt estimat)</div>
-    ${rows.map(r => {
-      const pct = Math.min(100, Math.round(r.val / r.ref * 100));
-      const cls = pct >= 75 ? 'ok' : pct >= 40 ? 'mid' : 'low';
-      const valStr = r.val.toFixed(r.dec) + r.unit;
-      return `<div class="micro-row">
-        <div class="micro-lbl">${r.lbl}</div>
-        <div class="micro-bar-wrap"><div class="micro-bar-fill ${cls}" style="width:${pct}%"></div></div>
-        <div class="micro-val" style="color:var(--${cls==='ok'?'green':cls==='mid'?'gold':'red'})">${valStr}</div>
-      </div>`;
-    }).join('')}
-    <div style="font-size:.68rem;color:var(--dim);margin-top:10px">Estimat baseret på anbefalede daglige værdier. Data er vejledende.</div>`;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
