@@ -44,9 +44,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:          #070707;
-    --bg-1:        #0d0d0d;
-    --bg-2:        #141414;
+    --bg:          #0a0a0a;
+    --bg-1:        #101010;
+    --bg-2:        #161616;
     --line:        #1f1d18;
     --line-strong: #2a261d;
     --ink:         #f2ebdc;
@@ -94,7 +94,7 @@
   /* ---------- BUTTONS ---------- */
   .btn{display:inline-flex;align-items:center;gap:14px;padding:18px 28px;font-family:var(--sans);font-size:13px;letter-spacing:0.18em;text-transform:uppercase;font-weight:600;cursor:pointer;transition:all .2s;border:1px solid transparent}
   .btn-primary{background:var(--gold);color:#0a0a0a;border-color:var(--gold)}
-  .btn-primary:hover{background:var(--gold-bright);border-color:var(--gold-bright);transform:translateY(-1px)}
+  .btn-primary:hover{background:var(--gold-bright);border-color:var(--gold-bright)}
   .btn-ghost{background:transparent;color:var(--ink);border-color:rgba(255,255,255,0.18)}
   .btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
   .btn-arrow{display:inline-block;transition:transform .25s}
@@ -230,9 +230,6 @@
 
   /* ---------- BOOKING CTA ---------- */
   .booking{padding:160px 0 140px;position:relative;overflow:hidden;text-align:center}
-  .booking::before{content:"";position:absolute;inset:0;background:
-    radial-gradient(ellipse at center top, rgba(201,169,97,0.10), transparent 60%);
-    pointer-events:none}
   .booking .container{position:relative}
   .booking .eyebrow{margin-bottom:32px}
   .booking h2{max-width:14ch;margin:0 auto 32px}
