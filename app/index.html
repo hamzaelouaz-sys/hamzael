@@ -186,6 +186,9 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .meal-toggle{width:30px;height:30px;border-radius:50%;background:var(--surf2);border:1px solid var(--bdr);cursor:pointer;color:var(--muted);transition:all var(--trans);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .meal-toggle.open{background:rgba(201,169,97,.12);color:var(--gold);transform:rotate(180deg);border-color:var(--bdr-g)}
 .meal-body{border-top:1px solid var(--bdr);padding:6px 22px 14px}
+.meal-variant-pills{display:flex;gap:8px;flex-wrap:wrap;padding:14px 0 10px}
+.variant-pill{padding:7px 14px;border-radius:999px;border:1px solid var(--bdr);background:var(--surf2);color:var(--muted);font-size:.78rem;font-weight:600;cursor:pointer;transition:all var(--trans)}
+.variant-pill.active{background:var(--gold);color:#000;border-color:var(--gold)}
 .meal-item{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--bdr)}
 .meal-item:last-child{border-bottom:none}
 .mi-name{font-size:.9rem;font-weight:500;color:var(--txt)}
@@ -2347,6 +2350,16 @@ function renderDashCheckins() {
 // ════════════════════════════════════════════════════════════════════════════
 // DIET
 // ════════════════════════════════════════════════════════════════════════════
+// Et måltid kan have flere varianter (fx 3 forskellige morgenmadsretter),
+// som klienten selv vælger mellem. Ældre/endnu-ugemte planer har måltider
+// som flade objekter uden `variants` — her pakkes de ind som én variant,
+// så resten af koden altid kan regne med m.variants.
+function getMealVariants(m) {
+  if (m.variants && m.variants.length) return m.variants;
+  return [{ id: m.id, label: '', note: m.note || '', items: m.items || [],
+    calories: m.calories||0, protein: m.protein||0, carbs: m.carbs||0, fat: m.fat||0 }];
+}
+
 async function fetchDiet() {
   const { data } = await sb.from('client_data')
     .select('kcal_goal,prot_goal,kh_goal,fedt_goal,program')
@@ -2354,9 +2367,10 @@ async function fetchDiet() {
     .order('updated_at', { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (!data) { S.diet = null; return; }
+  if (!data) { S.diet = null; S.dietSelections = {}; return; }
   let prog = {};
   try { prog = JSON.parse(data.program || '{}'); } catch(e) {}
+  S.dietSelections = prog.dietSelections || {};
   const d = prog.diet;
   if (d) {
     S.diet = {
@@ -2432,6 +2446,10 @@ function dismissMacroUpdate() {
 
 async function loadDiet() {
   await fetchDiet();
+  renderDiet();
+}
+
+function renderDiet() {
   const isActive = S.profile?.status === 'active';
   if (!S.diet) {
     const msg = isActive
@@ -2474,38 +2492,82 @@ async function loadDiet() {
     </div>`;
   }).join('');
   const mealIcons = [];
-  document.getElementById('meal-list').innerHTML = (d.meals || []).map((m, i) => `
+  document.getElementById('meal-list').innerHTML = (d.meals || []).map((m, i) => {
+    const variants = getMealVariants(m);
+    // slotKey er en stabil nøgle der overlever coachens drag-and-drop-omrokering
+    // af måltider; m.id er kun et positionsnummer og kan skifte ved omrokering.
+    const mealKey = m.slotKey || m.id;
+    const savedIdx = S.dietSelections?.[mealKey];
+    const activeIdx = (savedIdx != null && variants[savedIdx]) ? savedIdx : 0;
+    const v = variants[activeIdx];
+    const swapHtml = variants.length > 1 ? `
+      <div class="meal-variant-pills">
+        ${variants.map((vv, vi) => {
+          const lbl = (vv.label && vv.label.trim()) ? vv.label : `Variant ${vi+1}`;
+          return `<button class="variant-pill ${vi===activeIdx?'active':''}" onclick="event.stopPropagation();selectVariant('${escHtml(String(mealKey))}',${vi})">${escHtml(lbl)}</button>`;
+        }).join('')}
+      </div>` : '';
+    const mealNameLine = (variants.length > 1 && v.label && v.label.trim())
+      ? `${escHtml(m.name || '')} <span style="color:var(--muted);font-weight:500">– ${escHtml(v.label)}</span>`
+      : escHtml(m.name || '');
+    return `
     <div class="meal-card">
       <div class="meal-hdr" onclick="toggleMeal(${i})">
         <div class="meal-icon" style="font-family:var(--serif);font-weight:800;font-size:.78rem;letter-spacing:.06em;color:var(--gold)">${String(i+1).padStart(2,'0')}</div>
         <div class="meal-info">
           <div class="meal-time-lbl">${escHtml(m.time || '')}</div>
-          <div class="meal-nm">${escHtml(m.name || '')}</div>
+          <div class="meal-nm">${mealNameLine}</div>
         </div>
         <div class="meal-macros">
-          <span class="mm-kcal">${Math.round(m.calories||0)}</span> kcal
-          <span class="mm-sep">·</span> P ${Math.round(m.protein||0)}
-          <span class="mm-sep">·</span> K ${Math.round(m.carbs||0)}
-          <span class="mm-sep">·</span> F ${Math.round(m.fat||0)}
+          <span class="mm-kcal">${Math.round(v.calories||0)}</span> kcal
+          <span class="mm-sep">·</span> P ${Math.round(v.protein||0)}
+          <span class="mm-sep">·</span> K ${Math.round(v.carbs||0)}
+          <span class="mm-sep">·</span> F ${Math.round(v.fat||0)}
         </div>
         <button class="meal-toggle open" id="mt-${i}">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
       </div>
       <div class="meal-body" id="mb-${i}">
-        ${(m.items || []).map(it => `
+        ${swapHtml}
+        ${(v.items || []).map(it => `
           <div class="meal-item">
             <span class="mi-name">${escHtml(it.name||'')}</span>
             <span class="mi-amt">${it.gram ? escHtml(it.gram) + 'g' : escHtml(it.amount||'')}</span>
           </div>`).join('')}
-        ${m.note ? `
+        ${v.note ? `
           <div style="padding:14px 0 16px;border-top:1px solid var(--bdr);margin-top:2px">
             <div style="font-size:.68rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Tilberedning</div>
-            <div style="font-size:.86rem;color:var(--muted);line-height:1.7">${escHtml(m.note)}</div>
+            <div style="font-size:.86rem;color:var(--muted);line-height:1.7">${escHtml(v.note)}</div>
           </div>` : ''}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   checkAdherenceToday();
+}
+
+// Klienten skifter selv mellem de varianter coachen har lagt ind for et
+// måltid (fx 3 forskellige morgenmadsretter). Opdaterer UI med det samme og
+// gemmer valget i baggrunden, så det husker sig selv på tværs af enheder.
+function selectVariant(mealKey, idx) {
+  S.dietSelections = S.dietSelections || {};
+  if (S.dietSelections[mealKey] === idx) return;
+  S.dietSelections[mealKey] = idx;
+  renderDiet();
+  saveDietSelection();
+}
+
+async function saveDietSelection() {
+  if (!S.user) return;
+  try {
+    const { data } = await sb.from('client_data').select('id,program')
+      .eq('user_id', S.user.id).order('updated_at', { ascending: false }).limit(1).maybeSingle();
+    if (!data?.id) return;
+    let prog = {};
+    try { prog = JSON.parse(data.program || '{}'); } catch(e) {}
+    prog.dietSelections = S.dietSelections;
+    await sb.from('client_data').update({ program: JSON.stringify(prog) }).eq('id', data.id);
+  } catch (e) { console.warn('[saveDietSelection]', e); }
 }
 
 // Kostefterlevelse: ren daglig ja/delvist/nej-logning, ingen automatisk feedback baseret på svaret.
